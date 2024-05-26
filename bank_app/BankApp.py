@@ -1,1 +1,1 @@
-print('now i just learnt how to commit and push properly')
+print("here's how to commit & push")
