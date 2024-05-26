@@ -1,1 +1,1 @@
-print('did the code changed?')
+print('now i just learnt how to commit and push properly')
