@@ -11,7 +11,7 @@ def entry():
 def signup():
     full_name=input('Full name:')
     dob=input('D.O.B.:')
-    
+    phone=input('Phone no.:')
 
 
 
