@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POM-TODO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #dbf6fa;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #273f43;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00424a;
+        }
+        /* Custom styles for the circular progress bar */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        /* Task item animations */
+        .task-item {
+            transition: all 0.3s ease;
+        }
+        .task-item.completed {
+            opacity: 0.5;
+        }
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* Custom focus ring */
+        *:focus-visible {
+            outline: 2px solid #2f3b58;
+            outline-offset: 2px;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#00424a',
+                        'primary-light': '#edfcff',
+                        'secondary-dark': '#273f43',
+                        'secondary-light': '#dbf6fa',
+                        'tertiary-dark': '#2f3b58',
+                        'tertiary-light': '#bac6ea',
+                        'background': '#cde7ec',
+                        'error': '#de3730',
+                        'neutral-dark': '#393c3d',
+                        'neutral-light': '#f8fafa',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-neutral-dark antialiased">
+
+    <div id="app" class="flex h-screen w-screen overflow-hidden">
+        <!-- Left Sidebar -->
+        <aside class="hidden md:flex flex-col items-center w-20 bg-secondary-dark text-neutral-light p-4 space-y-8">
+            <div class="w-10 h-10 bg-tertiary-dark rounded-full flex items-center justify-center font-bold text-lg">
+                A
+            </div>
+            <nav class="flex flex-col items-center space-y-6 mt-12 flex-grow">
+                <button class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <i data-lucide="layout-dashboard"></i>
+                </button>
+                <button class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <i data-lucide="bar-chart-3"></i>
+                </button>
+                <button id="ai-assistant-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <i data-lucide="sparkles"></i>
+                </button>
+            </nav>
+            <div class="flex flex-col items-center space-y-6">
+                <button id="settings-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <i data-lucide="settings"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col bg-neutral-light overflow-hidden">
+            <!-- Header -->
+            <header class="flex items-center justify-between p-4 border-b border-secondary-light bg-neutral-light flex-shrink-0">
+                <div class="flex items-center space-x-4">
+                    <button class="md:hidden p-2 rounded-md hover:bg-secondary-light">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <h1 class="font-bold text-lg text-secondary-dark" id="current-date">Saturday 18 OCT</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    
+                    <div class="hidden sm:flex items-center space-x-1 text-secondary-dark">
+                        <button class="p-2 rounded-md hover:bg-secondary-light"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                        <button class="p-2 rounded-md hover:bg-secondary-light"><i data-lucide="square" class="w-4 h-4"></i></button>
+                        <button class="p-2 rounded-md hover:bg-error hover:text-white text-black"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Task Area -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                
+                <div class="bg-secondary-light p-6 rounded-xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <div id="add-task" class=" bg-neutral-light p-6 rounded-xl mb-8 flex flex-col md:flex-row items-center w-full flex items-center justify-between gap-2">
+                            <h2 class="text-2xl font-bold text-secondary-dark mb-4">Add a Task</h2>
+
+                            <button id="add-task-btn" class="flex items-center space-x-2 bg-primary-dark text-neutral-light px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <span class="hidden sm:inline">Add Task</span>
+                            </button>
+                        </div>
+                        <!-- Signal Tasks -->
+                        <section class="mb-8">
+                            <h2 class="text-2xl font-bold text-secondary-dark mb-4">Signal</h2>
+                            <div id="signal-tasks" class="space-y-3">
+                                <!-- Tasks will be injected here -->
+                            </div>
+                        </section>
+
+                        <!-- Noise Tasks -->
+                        <section>
+                            <h2 class="text-2xl font-bold text-secondary-dark mb-4">Noise</h2>
+                            <div id="noise-tasks" class="space-y-3">
+                                <!-- Tasks will be injected here -->
+                            </div>
+                        </section>
+                    </div>
+                    <!-- Pomodoro Timer Display card -->
+                    <div  id="pomodoro-display" >
+                        <div class="bg-neutral-light rounded-xl p-6 w-80 h-[450px] mb-6 flex flex-col justify-between">
+                            <h3 class="font-bold text-lg text-secondary-dark mb-5">Pomodoro</h3>
+            
+                            <div class="flex justify-center mb-4">
+                                <div class="relative w-60 h-50">
+                                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                                        <!-- Pomodoro ring -->
+                                        <circle class="text-tertiary-light" stroke-width="3" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                        <circle id="timer-progress-ring" class="progress-ring__circle text-primary-dark" stroke-width="6" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" stroke-linecap="round" />
+                                    </svg>    
+                                    <h4 id="timer-task-title" class="absolute inset-x-0 top-14 text-center text-xl text-secondary-dark"></h4>
+                                    <span id="timer-display" class="absolute inset-0 flex items-center justify-center text-5xl font-bold text-secondary-dark">25:00</span>
+                                    <p id="timer-status" class="absolute inset-x-0 bottom-14 text-center text-l text-secondary-dark"></p>
+                                </div>
+                            </div>
+                            <!-- timer button -->
+                            <div  class="flex items-center justify-center mb-4">
+                                <button id="timer-control-btn" class="bg-primary-dark text-white w-28 py-3 rounded-lg  font-semibold hover:bg-opacity-70 transition-all text-lg">START</button>
+                            </div>    
+                            <!-- Pomodoro buttons -->
+                            <div class="flex items-center justify-between ">
+                                <div class="w-full flex items-center justify-between gap-2">
+                                    
+                                    <p id="pomodoro-count-display" class="text-2xl font-bold text-primary-dark">0/4</p>
+                                    <div class="flex items-center gap-2">
+                                    <button id="timer-reset-btn" class="p-3 rounded-lg hover:bg-tertiary-light transition-colors"><i data-lucide="rotate-cw" class="w-6 h-6 text-secondary-dark"></i></button>
+                                    <button id="skip-pomodoro-btn" class="p-3 rounded-lg hover:bg-tertiary-light transition-colors"><i data-lucide="skip-forward" class="w-6 h-6 text-secondary-dark"></i></button>
+                                </div>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-tertiary-dark"></p>
+                                    <p class="text-2xl font-bold text-primary-dark"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="w-full lg:w-80 xl:w-96 bg-secondary-light p-6 overflow-y-auto flex-shrink-0 border-l border-background">
+            <!-- Performance Card -->
+            <div class="bg-neutral-light rounded-xl p-6 mb-6">
+                <h3 class="font-bold text-lg text-secondary-dark mb-4">Performance</h3>
+                <div class="flex justify-center mb-4">
+                    <div class="relative w-32 h-32">
+                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                            <circle class="text-tertiary-light" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                            <circle class="progress-ring__circle text-primary-dark" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" stroke-linecap="round" style="stroke-dasharray: 283; stroke-dashoffset: 42.45;" />
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center text-5xl font-bold text-primary-dark">A</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between ">
+                    <div>
+                        <p class="text-sm text-tertiary-dark">Hours</p>
+                        <p class="text-2xl font-bold text-primary-dark">6.5</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-tertiary-dark">Productivity</p>
+                        <p class="text-2xl font-bold text-primary-dark">85%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Calendar -->
+            <div>
+                <h3 class="font-bold text-lg text-secondary-dark mb-4">Weekly Progress</h3>
+                <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium text-tertiary-dark">
+                    <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                </div>
+                <div class="grid grid-cols-7 gap-2 mt-2">
+                    
+                    <!-- Calendar squares will be injected here -->
+                </div>
+            </div>
+            
+            <!-- Google Drive Sync -->
+            <div class="mt-8">
+                 <button id="gdrive-sync-btn" class="w-full flex items-center justify-center gap-2 bg-neutral-light border border-tertiary-light text-tertiary-dark py-3 rounded-lg hover:bg-tertiary-light transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>Sync to Google Drive</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto modal-content scale-95">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-title" class="text-2xl font-bold text-secondary-dark">Add New Task</h2>
+                <button id="close-modal-btn" class="p-1 rounded-full hover:bg-secondary-light"><i data-lucide="x" class="text-secondary-dark"></i></button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="mb-4">
+                    <label for="task-title" class="block text-sm font-medium text-tertiary-dark mb-1">Title</label>
+                    <input type="text" id="task-title-input" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark" required>
+                </div>
+                <div class="mb-4">
+                    <label for="task-category" class="block text-sm font-medium text-tertiary-dark mb-1">Category</label>
+                    <select id="task-category" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                        <option value="signal">Signal</option>
+                        <option value="noise">Noise</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="task-pomodoros" class="block text-sm font-medium text-tertiary-dark mb-1">Estimated Pomodoros</label>
+                    <input type="number" id="task-pomodoros" min="1" value="1" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                </div>
+                <div class="mb-6">
+                    <label for="task-recurrence" class="block text-sm font-medium text-tertiary-dark mb-1">Recurrence</slabel>
+                    <select id="task-recurrence" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                        <option value="none">None</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-primary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+
+    <!-- AI Assistant Modal -->
+    <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-md modal-content scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-secondary-dark flex items-center gap-2"><i data-lucide="sparkles" class="text-primary-dark"></i>AI Assistant</h2>
+                <button id="close-ai-modal-btn" class="p-1 rounded-full hover:bg-secondary-light"><i data-lucide="x" class="text-secondary-dark"></i></button>
+            </div>
+            <div id="ai-response" class="bg-secondary-light p-4 rounded-lg min-h-[100px] mb-4 text-tertiary-dark">
+                <p>Hello! I'm here to help you stay productive. Ask me for advice based on your activity.</p>
+            </div>
+            <button id="get-ai-advice-btn" class="w-full bg-tertiary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Get Advice</button>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-secondary-dark text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300">
+        <p id="toast-message">Synced to Google Drive!</p>
+    </div>
+
+    <audio id="tick-sound" src="https://www.soundjay.com/clock/sounds/clock-ticking-1.mp3" loop></audio>
+    <audio id="alarm-sound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // --- App State and Constants ---
+            const POMODORO_TIME = 25 * 60;
+            const SHORT_BREAK_TIME = 5 * 60;
+            const LONG_BREAK_TIME = 15 * 60;
+
+            let state = {
+                tasks: [],
+                timer: {
+                    mode: 'pomodoro', // 'pomodoro', 'shortBreak', 'longBreak'
+                    timeLeft: POMODORO_TIME,
+                    isActive: false,
+                    intervalId: null,
+                    currentTaskId: null,
+                },
+                settings: {
+                    pomodoroTime: 25,
+                    shortBreakTime: 5,
+                    longBreakTime: 15,
+                    autoStartBreaks: false,
+                    autoStartPomodoros: false,
+                },
+                stats: {
+                    pomodorosCompleted: 0,
+                    hoursFocused: 0,
+                },
+            };
+
+            // --- DOM Element Selectors ---
+            const signalTasksContainer = document.getElementById('signal-tasks');
+            const noiseTasksContainer = document.getElementById('noise-tasks');
+            const addTaskBtn = document.getElementById('add-task-btn');
+            const taskModal = document.getElementById('task-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const taskForm = document.getElementById('task-form');
+            const modalTitle = document.getElementById('modal-title');
+            const timerDisplay = document.getElementById('timer-display');
+            const timerProgressRing = document.getElementById('timer-progress-ring');
+            const timerControlBtn = document.getElementById('timer-control-btn');
+            const timerResetBtn = document.getElementById('timer-reset-btn');
+            const skipPomodoroBtn = document.getElementById('skip-pomodoro-btn');
+            const timerTaskTitle = document.getElementById('timer-task-title');
+            const pomodoroCountDisplay = document.getElementById('pomodoro-count-display');
+            const timerStatus = document.getElementById('timer-status');
+            const tickSound = document.getElementById('tick-sound');
+            const alarmSound = document.getElementById('alarm-sound');
+            const gdriveSyncBtn = document.getElementById('gdrive-sync-btn');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const aiModal = document.getElementById('ai-modal');
+            const aiAssistantBtn = document.getElementById('ai-assistant-btn');
+            const closeAiModalBtn = document.getElementById('close-ai-modal-btn');
+            const getAiAdviceBtn = document.getElementById('get-ai-advice-btn');
+            const aiResponse = document.getElementById('ai-response');
+
+            const radius = timerProgressRing.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            timerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+            timerProgressRing.style.strokeDashoffset = circumference;
+
+            // --- Utility Functions ---
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            };
+
+            const showToast = (message) => {
+                toastMessage.textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            };
+
+            // --- Data Persistence (Simulated) ---
+            const saveState = () => {
+                localStorage.setItem('pomTodoState', JSON.stringify(state));
+            };
+
+            const loadState = () => {
+                const savedState = localStorage.getItem('pomTodoState');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                    // Reset timer state on load
+                    state.timer.isActive = false;
+                    state.timer.intervalId = null;
+                    state.timer.timeLeft = state.settings.pomodoroTime * 60;
+                } else {
+                    // Add default tasks if no state is saved
+                    state.tasks = [
+                        { id: 1, title: 'CS50 for 3 hrs', category: 'signal', pomodoros: 6, completedPomodoros: 1, recurrence: 'daily', completed: false },
+                        { id: 2, title: 'Review project brief', category: 'signal', pomodoros: 1, completedPomodoros: 0, recurrence: 'none', completed: false },
+                        { id: 3, title: 'Check emails', category: 'noise', pomodoros: 1, completedPomodoros: 0, recurrence: 'daily', completed: true },
+                    ];
+                }
+            };
+
+            // --- TaskList Component Logic ---
+            const renderTasks = () => {
+                signalTasksContainer.innerHTML = '';
+                noiseTasksContainer.innerHTML = '';
+                pomodoroCountDisplay.textContent = `${state.stats.pomodorosCompleted % 4}/4`;
+
+                if (state.tasks.length === 0) {
+                    signalTasksContainer.innerHTML = `<p class="text-tertiary-dark">No tasks yet. Add one to get started!</p>`;
+                }
+
+                state.tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = `task-item bg-white p-4 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md ${task.completed ? 'completed' : ''}`;
+                    taskItem.dataset.id = task.id;
+
+                    taskItem.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <button class="task-complete-btn flex-shrink-0 w-6 h-6 rounded-full border-2 ${task.completed ? 'bg-primary-dark border-primary-dark' : 'border-tertiary-light'} flex items-center justify-center">
+                                ${task.completed ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                            </button>
+                            <div>
+                                <p class="task-title font-medium text-secondary-dark">${task.title}</p>
+                                <p class="text-sm text-tertiary-dark">${task.completedPomodoros}/${task.pomodoros} Pomodoros</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="task-reset-btn p-2 rounded-md hover:bg-secondary-light"><i data-lucide="refresh" class="w-5 h-5 text-tertiary-dark"></i>Reset</button>
+                            ${state.timer.currentTaskId === task.id && state.timer.isActive ? 
+                                `<div class="w-6 h-6 rounded-full bg-primary-dark flex items-center justify-center animate-pulse"><div class="w-2 h-2 bg-white rounded-full"></div></div>` :
+                                `<button class="task-start-btn p-2 rounded-md hover:bg-secondary-light ${task.completed ? 'hidden' : ''}"><i data-lucide="play-circle" class="w-5 h-5 text-primary-dark"></i></button>`
+                            }
+                            <button class="task-edit-btn p-2 rounded-md hover:bg-secondary-light"><i data-lucide="edit-2" class="w-5 h-5 text-tertiary-dark"></i></button>
+                            <button class="task-delete-btn p-2 rounded-md hover:bg-secondary-light"><i data-lucide="trash-2" class="w-5 h-5 text-error"></i></button>
+                        </div>
+                    `;
+
+                    if (task.category === 'signal') {
+                        signalTasksContainer.appendChild(taskItem);
+                    } else {
+                        noiseTasksContainer.appendChild(taskItem);
+                    }
+                });
+                lucide.createIcons();
+            };
+
+            // --- TaskForm Component Logic ---
+            const openTaskModal = (task = null) => {
+                taskForm.reset();
+                if (task) {
+                    modalTitle.textContent = 'Edit Task';
+                    document.getElementById('task-id').value = task.id;
+                    document.getElementById('task-title-input').value = task.title;
+                    document.getElementById('task-category').value = task.category;
+                    document.getElementById('task-pomodoros').value = task.pomodoros;
+                    document.getElementById('task-recurrence').value = task.recurrence;
+                } else {
+                    modalTitle.textContent = 'Add New Task';
+                    document.getElementById('task-id').value = '';
+                }
+                taskModal.classList.remove('hidden');
+                setTimeout(() => {
+                    taskModal.querySelector('.modal-content').classList.remove('scale-95');
+                    taskModal.classList.remove('opacity-0');
+                }, 10);
+            };
+
+            const closeTaskModal = () => {
+                taskModal.querySelector('.modal-content').classList.add('scale-95');
+                taskModal.classList.add('opacity-0');
+                setTimeout(() => taskModal.classList.add('hidden'), 300);
+            };
+
+            const handleTaskFormSubmit = (e) => {
+                e.preventDefault();
+                const id = document.getElementById('task-id').value;
+                const taskData = {
+                    title: document.getElementById('task-title-input').value,
+                    category: document.getElementById('task-category').value,
+                    pomodoros: parseInt(document.getElementById('task-pomodoros').value),
+                    recurrence: document.getElementById('task-recurrence').value,
+                };
+
+                if (id) {
+                    // Edit task
+                    const taskIndex = state.tasks.findIndex(t => t.id == id);
+                    state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...taskData };
+                } else {
+                    // Add new task
+                    const newTask = {
+                        id: Date.now(),
+                        completedPomodoros: 0,
+                        completed: false,
+                        ...taskData
+                    };
+                    state.tasks.push(newTask);
+                }
+                saveState();
+                renderApp();
+                closeTaskModal();
+            };
+
+            // --- usePomodoro Hook Logic ---
+            const updateTimerDisplay = () => {
+                timerDisplay.textContent = formatTime(state.timer.timeLeft);
+                const totalDuration = state.timer.mode === 'pomodoro' ? state.settings.pomodoroTime * 60 : (state.timer.mode === 'shortBreak' ? state.settings.shortBreakTime * 60 : state.settings.longBreakTime * 60);
+                const progress = (totalDuration - state.timer.timeLeft) / totalDuration;
+                const offset = circumference - progress * circumference;
+                timerProgressRing.style.strokeDashoffset = offset;
+            };
+
+            const startTimer = () => {
+                if (state.timer.isActive) return;
+                state.timer.isActive = true;
+                timerControlBtn.textContent = 'PAUSE';
+                tickSound.play();
+
+                state.timer.intervalId = setInterval(() => {
+                    state.timer.timeLeft--;
+                    updateTimerDisplay();
+                    if (state.timer.timeLeft <= 0) {
+                        clearInterval(state.timer.intervalId);
+                        handleTimerEnd();
+                    }
+                }, 1000);
+                renderTasks();
+            };
+
+            const pauseTimer = () => {
+                if (!state.timer.isActive) return;
+                state.timer.isActive = false;
+                clearInterval(state.timer.intervalId);
+                timerControlBtn.textContent = 'START';
+                tickSound.pause();
+                renderTasks();
+            };
+
+            const resetTimer = (mode = 'pomodoro', taskId = null) => {
+                pauseTimer();
+                state.timer.mode = mode;
+                state.timer.currentTaskId = taskId;
+                
+                const currentTask = state.tasks.find(t => t.id === taskId);
+                timerTaskTitle.textContent = currentTask ? currentTask.title : '';
+
+                switch (mode) {
+                    case 'pomodoro':
+                        state.timer.timeLeft = state.settings.pomodoroTime * 60;
+                        timerStatus.textContent = 'Time to focus!';
+                        break;
+                    case 'shortBreak':
+                        state.timer.timeLeft = state.settings.shortBreakTime * 60;
+                        timerStatus.textContent = 'Time for a short break!';
+                        break;
+                    case 'longBreak':
+                        state.timer.timeLeft = state.settings.longBreakTime * 60;
+                        timerStatus.textContent = 'Time for a long break!';
+                        break;
+                }
+                updateTimerDisplay();
+            };
+
+            const handleTimerEnd = () => {
+                state.timer.isActive = false;
+                tickSound.pause();
+                alarmSound.play();
+                
+                if (Notification.permission === "granted") {
+                    new Notification("POM-TODO", { body: `${timerStatus.textContent} is over!` });
+                }
+
+                if (state.timer.mode === 'pomodoro') {
+                    if (state.timer.currentTaskId) {
+                        const task = state.tasks.find(t => t.id === state.timer.currentTaskId);
+                        if (task) {
+                            task.completedPomodoros++;
+                            if (task.completedPomodoros >= task.pomodoros) {
+                                task.completed = true;
+                            }
+                        }
+                    }
+                    // Logic for next break
+                    const nextMode = state.stats.pomodorosCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
+                    resetTimer(nextMode);
+                } else {
+                    // Break ended, start next pomodoro
+                    state.stats.pomodorosCompleted++;
+                    resetTimer('pomodoro', state.timer.currentTaskId);
+                }
+                saveState();
+                renderApp();
+            };
+
+            const handleTimerControlClick = () => {
+                if (state.timer.isActive) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            };
+
+            const skipPomodoro = () => {
+                pauseTimer();
+                alarmSound.play();
+                if (state.timer.mode === 'pomodoro') {
+                    // Skipping a focus session, count it and move to the next break
+                    state.stats.pomodorosCompleted++;
+                    if (state.timer.currentTaskId) {
+                        const task = state.tasks.find(t => t.id === state.timer.currentTaskId);
+                        if (task) {
+                            task.completedPomodoros++;
+                            if (task.completedPomodoros >= task.pomodoros) {
+                                task.completed = true;
+                            }
+                        }
+                    }
+                    const nextMode = state.stats.pomodorosCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
+                    resetTimer(nextMode, state.timer.currentTaskId);
+                } else {
+                    // Skipping a break, go back to a pomodoro session
+                    state.stats.pomodorosCompleted++;
+                    resetTimer('pomodoro', state.timer.currentTaskId);
+                }
+                // Automatically start the next timer
+                startTimer();
+            };
+            // --- Event Handlers ---
+            addTaskBtn.addEventListener('click', () => openTaskModal());
+            closeModalBtn.addEventListener('click', closeTaskModal);
+            taskModal.addEventListener('click', (e) => {
+                if (e.target === taskModal) closeTaskModal();
+            });
+            taskForm.addEventListener('submit', handleTaskFormSubmit);
+
+            const handleTaskActions = (e) => {
+                const taskItem = e.target.closest('.task-item');
+                if (!taskItem) return;
+                const taskId = parseInt(taskItem.dataset.id);
+
+                if (e.target.closest('.task-complete-btn')) {
+                    const task = state.tasks.find(t => t.id === taskId);
+                    task.completed = !task.completed;
+                }
+                if (e.target.closest('.task-reset-btn')) {
+                    const task = state.tasks.find(t => t.id === taskId);
+                    if (task) {
+                        task.completedPomodoros = 0;
+                        task.completed = false;
+                    }
+                }
+                if (e.target.closest('.task-edit-btn')) {
+                    const task = state.tasks.find(t => t.id === taskId);
+                    openTaskModal(task);
+                }
+                if (e.target.closest('.task-delete-btn')) {
+                    state.tasks = state.tasks.filter(t => t.id !== taskId);
+                }
+                if (e.target.closest('.task-start-btn')) {
+                    resetTimer('pomodoro', taskId);
+                    startTimer();
+                }
+                saveState();
+                renderApp();
+            };
+
+            signalTasksContainer.addEventListener('click', handleTaskActions);
+            noiseTasksContainer.addEventListener('click', handleTaskActions);
+
+            timerControlBtn.addEventListener('click', handleTimerControlClick);
+            timerResetBtn.addEventListener('click', () => resetTimer('pomodoro', state.timer.currentTaskId));
+            skipPomodoroBtn.addEventListener('click', skipPomodoro);
+
+            gdriveSyncBtn.addEventListener('click', () => {
+                saveState();
+                showToast('Synced to Google Drive!');
+            });
+            
+            // AI Modal Logic
+            const aiAdvices = [
+                "You've been working hard! Remember to stretch and hydrate.",
+                "Try breaking down your biggest 'Signal' task into smaller sub-tasks.",
+                "Great focus! Consider taking a 5-minute walk to refresh your mind.",
+                "Your productivity is high. Keep up the momentum!",
+                "Feeling stuck? Switch to a 'Noise' task for a quick win."
+            ];
+            aiAssistantBtn.addEventListener('click', () => aiModal.classList.remove('hidden'));
+            closeAiModalBtn.addEventListener('click', () => aiModal.classList.add('hidden'));
+            getAiAdviceBtn.addEventListener('click', () => {
+                const randomIndex = Math.floor(Math.random() * aiAdvices.length);
+                aiResponse.innerHTML = `<p>${aiAdvices[randomIndex]}</p>`;
+            });
+
+            // --- App Initialization ---
+            const renderApp = () => {
+                renderTasks();
+                updateTimerDisplay();
+                // Other render functions for stats, calendar etc. would go here
+            };
+
+            const init = () => {
+                // Set current date
+                const today = new Date();
+                const options = { weekday: 'long', day: 'numeric', month: 'short' };
+                document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', options).toUpperCase();
+
+                // Request notification permission
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+
+                loadState();
+                resetTimer('pomodoro');
+                renderApp();
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POM-TODO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* THEME VARIABLES */
+        :root {
+            /* Cloud Light (Default) */
+            --color-primary-dark: #00424a;
+            --color-primary-light: #edfcff;
+            --color-secondary-dark: #273f43;
+            --color-secondary-light: #dbf6fa;
+            --color-tertiary-dark: #2f3b58;
+            --color-tertiary-light: #bac6ea;
+            --color-background: #cde7ec;
+            --color-error: #de3730;
+            --color-neutral-dark: #393c3d;
+            --color-neutral-light: #f8fafa;
+        }
+
+        /* Charcoal Theme */
+        body.theme-charcoal {
+            --color-primary-dark: #64ffda;
+            --color-primary-light: #1d3b36;
+            --color-secondary-dark: #e6f1f5;
+            --color-secondary-light: #233036;
+            --color-tertiary-dark: #a7b7d6;
+            --color-tertiary-light: #303d55;
+            --color-background: #101518;
+            --color-error: #ff5252;
+            --color-neutral-dark: #e0e0e0;
+            --color-neutral-light: #1b2226;
+        }
+
+        /* Radium Theme */
+        body.theme-radium {
+            --color-primary-dark: #39ff14;
+            --color-primary-light: #0a1f05;
+            --color-secondary-dark: #ffffff;
+            --color-secondary-light: #1a1a1a;
+            --color-tertiary-dark: #b3ffb3;
+            --color-tertiary-light: #2d2d2d;
+            --color-background: #000000;
+            --color-error: #ff0055;
+            --color-neutral-dark: #ffffff;
+            --color-neutral-light: #111111;
+        }
+
+        /* Lilac Theme */
+        body.theme-lilac {
+            --color-primary-dark: #7b1fa2;
+            --color-primary-light: #f3e5f5;
+            --color-secondary-dark: #4a148c;
+            --color-secondary-light: #e1bee7;
+            --color-tertiary-dark: #6a1b9a;
+            --color-tertiary-light: #ce93d8;
+            --color-background: #f3e5f5;
+            --color-error: #c62828;
+            --color-neutral-dark: #4a148c;
+            --color-neutral-light: #ffffff;
+        }
+
+        /* Bubblegum Theme */
+        body.theme-bubblegum {
+            --color-primary-dark: #e91e63;
+            --color-primary-light: #fce4ec;
+            --color-secondary-dark: #0d47a1;
+            --color-secondary-light: #bbdefb;
+            --color-tertiary-dark: #880e4f;
+            --color-tertiary-light: #f8bbd0;
+            --color-background: #e3f2fd;
+            --color-error: #d32f2f;
+            --color-neutral-dark: #212121;
+            --color-neutral-light: #ffffff;
+        }
+
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-secondary-light);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-secondary-dark);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary-dark);
+        }
+        /* Custom styles for the circular progress bar */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        /* Task item animations */
+        .task-item {
+            transition: all 0.3s ease;
+        }
+        .task-item.completed {
+            opacity: 0.5;
+        }
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* Custom focus ring */
+        *:focus-visible {
+            outline: 2px solid var(--color-tertiary-dark);
+            outline-offset: 2px;
+        }
+        .stopwatch-tick {
+            stroke: var(--color-tertiary-light); /* Corresponds to text-tertiary-light */
+            transition: stroke 0.2s ease-in-out;
+        }
+        .stopwatch-tick.active {
+            stroke: var(--color-primary-dark); /* Corresponds to text-primary-dark */
+        }
+
+        /* --- THEME CONTRAST FIXES --- */
+        /* In dark themes (Charcoal, Radium), elements with hardcoded 'bg-white' 
+           (like task cards and calendar days) must have dark text to be visible,
+           as the theme's text variables are normally light. */
+        body.theme-charcoal .bg-white,
+        body.theme-radium .bg-white,
+        body.theme-charcoal .bg-white *,
+        body.theme-radium .bg-white * {
+            --color-secondary-dark: #1a202c;
+            --color-tertiary-dark: #4a5568;
+            --color-neutral-dark: #2d3748;
+            --color-primary-dark: #276749;
+        }
+
+        /* Ensure form controls inside white segments have dark text */
+        body.theme-charcoal .bg-white input,
+        body.theme-charcoal .bg-white select,
+        body.theme-charcoal .bg-white textarea,
+        body.theme-radium .bg-white input,
+        body.theme-radium .bg-white select,
+        body.theme-radium .bg-white textarea {
+            color: #1a202c !important;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': 'var(--color-primary-dark)',
+                        'primary-light': 'var(--color-primary-light)',
+                        'secondary-dark': 'var(--color-secondary-dark)',
+                        'secondary-light': 'var(--color-secondary-light)',
+                        'tertiary-dark': 'var(--color-tertiary-dark)',
+                        'tertiary-light': 'var(--color-tertiary-light)',
+                        'background': 'var(--color-background)',
+                        'error': 'var(--color-error)',
+                        'neutral-dark': 'var(--color-neutral-dark)',
+                        'neutral-light': 'var(--color-neutral-light)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-neutral-dark antialiased">
+
+    <div id="app" class="flex h-screen w-screen overflow-hidden">
+        <!-- Left Sidebar -->
+        <aside class="hidden md:flex flex-col items-center w-20 bg-secondary-dark text-neutral-light p-4 space-y-8">
+            <div class="w-10 h-10 bg-tertiary-dark rounded-full flex items-center justify-center font-bold text-lg">
+                A
+            </div>
+            <nav class="flex flex-col items-center space-y-6 mt-12 flex-grow">
+                <button id="dashboard-btn" class="p-2 rounded-lg bg-tertiary-dark transition-colors">
+                    <i data-lucide="layout-dashboard"></i>
+                </button>
+                <button id="weekly-review-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <!-- Weekly Review Button -->
+                    <i data-lucide="bar-chart-3"></i>
+                </button>
+                <button id="ai-assistant-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <i data-lucide="sparkles"></i>
+                </button>
+            </nav>
+            <div class="flex flex-col items-center space-y-6">
+                <button id="settings-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors">
+                    <i data-lucide="settings"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col bg-neutral-light overflow-hidden">
+            <!-- Header -->
+            <header class="flex items-center justify-between p-4 border-b border-secondary-light bg-neutral-light flex-shrink-0">
+                <div class="flex items-center space-x-4">
+                    <button class="md:hidden p-2 rounded-md hover:bg-secondary-light">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <h1 class="font-bold text-lg text-secondary-dark" id="current-date">Saturday 18 OCT</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    
+                    <div class="hidden sm:flex items-center space-x-1 text-secondary-dark">
+                        <button class="p-2 rounded-md hover:bg-secondary-light"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                        <button class="p-2 rounded-md hover:bg-secondary-light"><i data-lucide="square" class="w-4 h-4"></i></button>
+                        <button class="p-2 rounded-md hover:bg-error hover:text-white text-black"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View (Tasks & Timer) -->
+            <div id="dashboard-view" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                
+                <div class="bg-secondary-light p-6 rounded-xl mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <div id="add-task" class=" bg-neutral-light p-6 rounded-xl mb-8 flex flex-col md:flex-row items-center w-full flex items-center justify-between gap-2">
+                            <h2 class="text-2xl font-bold text-secondary-dark mb-4">Add a Task</h2>
+
+                            <button id="add-task-btn" class="flex items-center space-x-2 bg-primary-dark text-neutral-light px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <span class="hidden sm:inline">Add Task</span>
+                            </button>
+                        </div>
+                        <!-- Signal Tasks -->
+                        <section class="mb-8">
+                            <h2 class="text-2xl font-bold text-secondary-dark mb-4">Signal</h2>
+                            <div id="signal-tasks" class="space-y-3">
+                                <!-- Tasks will be injected here -->
+                            </div>
+                        </section>
+
+                        <!-- Noise Tasks -->
+                        <section>
+                            <h2 class="text-2xl font-bold text-secondary-dark mb-4">Noise</h2>
+                            <div id="noise-tasks" class="space-y-3">
+                                <!-- Tasks will be injected here -->
+                            </div>
+                        </section>
+                    </div>
+                    <!-- Pomodoro Timer Display card -->
+                    <div  id="pomodoro-display" >
+                        <div class="bg-neutral-light rounded-xl p-6 w-80 h-[450px] mb-6 flex flex-col justify-between">
+                            <div class="flex items-center justify-between ">
+                                <h3 id="pomodoro-mode-btn" class="font-bold text-lg text-secondary-dark mb-4 cursor-pointer">Pomodoro</h3>
+                                <h3 id="stopwatch-mode-btn" class="font-normal text-lg text-tertiary-dark mb-4 cursor-pointer">Stop Watch</h3>
+                            </div>
+                            <!-- Pomodoro UI -->
+                            <div id="pomodoro-ui" class="h-full flex flex-col justify-between">
+                                <div class="flex justify-center mb-4">
+                                    <div class="relative w-60 h-50">
+                                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                                            <circle class="text-tertiary-light" stroke-width="3" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                            <circle id="timer-progress-ring" class="progress-ring__circle text-primary-dark" stroke-width="6" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" stroke-linecap="round" />
+                                        </svg>    
+                                        <h4 id="timer-task-title" class="absolute inset-x-0 top-14 text-center text-xl text-secondary-dark"></h4>
+                                        <span id="timer-display" class="absolute inset-0 flex items-center justify-center text-5xl font-bold text-secondary-dark">25:00</span>
+                                        <p id="timer-status" class="absolute inset-x-0 bottom-14 text-center text-l text-secondary-dark"></p>
+                                    </div>
+                                </div>
+                                <div  class="flex items-center justify-center mb-4">
+                                    <button id="timer-control-btn" class="bg-primary-dark text-white w-28 py-3 rounded-lg  font-semibold hover:bg-opacity-70 transition-all text-lg">START</button>
+                                </div>    
+                                <div class="w-full flex items-center justify-between gap-2">
+                                    <p id="pomodoro-count-display" class="text-2xl font-bold text-primary-dark">0/4</p>
+                                    <div class="flex items-center gap-2">
+                                        <button id="timer-reset-btn" class="p-3 rounded-lg hover:bg-tertiary-light transition-colors"><i data-lucide="rotate-cw" class="w-6 h-6 text-secondary-dark"></i></button>
+                                        <button id="skip-pomodoro-btn" class="p-3 rounded-lg hover:bg-tertiary-light transition-colors"><i data-lucide="skip-forward" class="w-6 h-6 text-secondary-dark"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Stopwatch UI (currently empty) -->
+                            <div id="stopwatch-ui" class="hidden">
+                                
+                                <div class="h-full flex flex-col justify-between items-center py-6">
+
+                                    <!-- 1. Title (matches pomodoro) -->
+                                    <div>
+                                        <h3 class="font-bold text-lg text-secondary-dark">Stopwatch</h3>
+                                    </div>
+
+                                    <!-- 2. The Ring and Time Display -->
+                                    <div class="relative w-60 h-60">
+                                        <!-- 
+                                        SVG Container for the ticks. 
+                                        The <g> (group) is rotated -90 degrees to start the ticks at the top.
+                                        -->
+                                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                                            <g id="stopwatch-tick-container" transform="rotate(-90 50 50)">
+                                                <!-- Ticks will be dynamically generated here by the script below -->
+                                            </g>
+                                        </svg>
+
+                                        <!-- Time display (unchanged ID) -->
+                                        <span id="stopwatch-display"
+                                            class="absolute inset-0 flex items-center justify-center text-5xl font-bold text-secondary-dark">
+                                            00:00
+                                        </span>
+                                    </div>
+
+                                    <!-- 3. Control Button (Minimal, as in the image) -->
+                                    <div class="flex items-center justify-center">
+                                        <!-- 
+                                        Single control button, styled to be circular.
+                                        Your main JS will toggle the text between START and PAUSE.
+                                        -->
+                                        <button id="stopwatch-control-btn"
+                                            class="bg-transparent border-2 border-primary-dark text-primary-dark w-32 py-3 rounded-full font-semibold hover:bg-primary-dark hover:text-white transition-all text-lg">
+                                            START
+                                        </button>
+                                    </div>
+                                </div>
+
+<!-- 
+  This script generates the 60 tick marks for the stopwatch.
+  Your main application script (in POM-TODO.html) will be responsible for
+  finding these ticks and changing their class/color based on the timer.
+-->
+<script>
+</script>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Weekly Review View -->
+            <div id="weekly-review-view" class="hidden flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                <div class="bg-neutral-light rounded-xl p-6 h-full flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <h2 class="text-2xl font-bold text-secondary-dark">Review</h2>
+                            <select id="review-duration-selector" class="p-2 border border-tertiary-light rounded-md bg-white text-secondary-dark focus:ring-2 focus:ring-tertiary-dark">
+                                <option value="day">Day</option>
+                                <option value="week">Week</option>
+                                <option value="month">Month</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                            <input type="number" id="custom-duration-input" min="1" value="10" class="hidden w-16 p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark" placeholder="Days">
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button id="prev-month-btn" class="p-2 rounded-full hover:bg-secondary-light"><i data-lucide="chevron-left" class="text-secondary-dark"></i></button>
+                            <h3 id="calendar-month-year" class="text-xl font-semibold text-secondary-dark">October 2023</h3>
+                            <button id="next-month-btn" class="p-2 rounded-full hover:bg-secondary-light"><i data-lucide="chevron-right" class="text-secondary-dark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-7 gap-4 mb-4 text-center">
+                        <div class="font-bold text-tertiary-dark">Sun</div>
+                        <div class="font-bold text-tertiary-dark">Mon</div>
+                        <div class="font-bold text-tertiary-dark">Tue</div>
+                        <div class="font-bold text-tertiary-dark">Wed</div>
+                        <div class="font-bold text-tertiary-dark">Thu</div>
+                        <div class="font-bold text-tertiary-dark">Fri</div>
+                        <div class="font-bold text-tertiary-dark">Sat</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-4 flex-grow auto-rows-fr">
+                        <!-- Days injected here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="w-full lg:w-80 xl:w-96 bg-secondary-light p-6 overflow-y-auto flex-shrink-0 border-l border-background">
+            
+            <!-- Dashboard Sidebar Content -->
+            <div id="sidebar-dashboard-content">
+                <!-- Performance Card -->
+                <div class="bg-neutral-light rounded-xl p-6 mb-6">
+                    <h3 class="font-bold text-lg text-secondary-dark mb-4">Performance</h3>
+                    <div class="flex justify-center mb-4">
+                        <div class="relative w-32 h-32">
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <circle class="text-tertiary-light" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                <circle class="progress-ring__circle text-primary-dark" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" stroke-linecap="round" style="stroke-dasharray: 283; stroke-dashoffset: 42.45;" />
+                            </svg>
+                            <span class="absolute inset-0 flex items-center justify-center text-5xl font-bold text-primary-dark">A</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between ">
+                        <div>
+                            <p class="text-sm text-tertiary-dark">Hours</p>
+                            <p class="text-2xl font-bold text-primary-dark">6.5</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-tertiary-dark">Productivity</p>
+                            <p class="text-2xl font-bold text-primary-dark">85%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Calendar -->
+                <div>
+                    <h3 class="font-bold text-lg text-secondary-dark mb-4">Weekly Progress</h3>
+                    <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium text-tertiary-dark">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-2 mt-2">
+                        <!-- Calendar squares will be injected here -->
+                    </div>
+                </div>
+                
+                <!-- Google Drive Sync -->
+                <div class="mt-8">
+                    <button id="gdrive-sync-btn" class="w-full flex items-center justify-center gap-2 bg-neutral-light border border-tertiary-light text-tertiary-dark py-3 rounded-lg hover:bg-tertiary-light transition-colors">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Sync to Google Drive</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Review Writing Sidebar Content -->
+            <div id="sidebar-review-content" class="hidden flex flex-col h-full">
+                <h3 class="font-bold text-lg text-secondary-dark mb-2">Write Review</h3>
+                <p id="sidebar-review-date-label" class="text-sm text-tertiary-dark mb-4">Select a date or range to review</p>
+                
+                <textarea id="sidebar-review-text" class="flex-grow w-full p-4 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark resize-none mb-4" placeholder="How was your productivity? What did you accomplish?"></textarea>
+                
+                <div class="flex justify-between gap-2">
+                     <button id="sidebar-delete-review-btn" class="px-4 py-2 text-error hover:bg-red-50 rounded-lg transition-colors hidden">Delete</button>
+                    <button id="sidebar-save-review-btn" class="flex-1 bg-primary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Save</button>
+                </div>
+            </div>
+
+        </aside>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto modal-content scale-95">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-title" class="text-2xl font-bold text-secondary-dark">Add New Task</h2>
+                <button id="close-modal-btn" class="p-1 rounded-full hover:bg-secondary-light"><i data-lucide="x" class="text-secondary-dark"></i></button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="mb-4">
+                    <label for="task-title" class="block text-sm font-medium text-tertiary-dark mb-1">Title</label>
+                    <input type="text" id="task-title-input" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark" required>
+                </div>
+                <div class="mb-4">
+                    <label for="task-category" class="block text-sm font-medium text-tertiary-dark mb-1">Category</label>
+                    <select id="task-category" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                        <option value="signal">Signal</option>
+                        <option value="noise">Noise</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="task-pomodoros" class="block text-sm font-medium text-tertiary-dark mb-1">Estimated Pomodoros</label>
+                    <input type="number" id="task-pomodoros" min="1" value="1" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                </div>
+                <div class="mb-6">
+                    <label for="task-recurrence" class="block text-sm font-medium text-tertiary-dark mb-1">Recurrence</slabel>
+                    <select id="task-recurrence" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                        <option value="none">None</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-primary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+
+    <!-- AI Assistant Modal -->
+    <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-md modal-content scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-secondary-dark flex items-center gap-2"><i data-lucide="sparkles" class="text-primary-dark"></i>AI Assistant</h2>
+                <button id="close-ai-modal-btn" class="p-1 rounded-full hover:bg-secondary-light"><i data-lucide="x" class="text-secondary-dark"></i></button>
+            </div>
+            <div id="ai-response" class="bg-secondary-light p-4 rounded-lg min-h-[100px] mb-4 text-tertiary-dark">
+                <p>Hello! I'm here to help you stay productive. Ask me for advice based on your activity.</p>
+            </div>
+            <button id="get-ai-advice-btn" class="w-full bg-tertiary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Get Advice</button>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto modal-content scale-95">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-secondary-dark flex items-center gap-2"><i data-lucide="settings" class="text-primary-dark"></i>Settings</h2>
+                <button id="close-settings-modal-btn" class="p-1 rounded-full hover:bg-secondary-light"><i data-lucide="x" class="text-secondary-dark"></i></button>
+            </div>
+            <div class="flex justify-around mb-6 border-b border-secondary-light pb-4">
+                <button id="pomodoro-settings-btn" class="p-2 rounded-lg hover:bg-secondary-light" aria-label="Timer Settings"><i data-lucide="clock" class="text-secondary-dark"></i></button>
+                <button id="general-settings-btn" class="p-2 rounded-lg bg-secondary-light" aria-label="General Settings"><i data-lucide="settings" class="text-secondary-dark"></i></button>
+                <button id="theme-settings-btn" class="p-2 rounded-lg hover:bg-secondary-light" aria-label="Theme Settings"><i data-lucide="palette" class="text-secondary-dark"></i></button>
+                <button id="info-settings-btn" class="p-2 rounded-lg hover:bg-secondary-light" aria-label="About & Help"><i data-lucide="help-circle" class="text-secondary-dark"></i></button>
+            </div>
+
+            <!-- Settings Content Area -->
+            <div id="settings-content">
+                <!-- Timer Settings (was settings-form) -->
+                <div id="pomodoro-settings-panel" class="settings-panel hidden">
+                    <form id="settings-form">
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-secondary-dark border-b border-secondary-light pb-2">Timer Durations (minutes)</h3>
+                            <div>
+                                <div class="mb-4">
+                                    <label for="setting-pomodoro" class="block text-sm font-medium text-tertiary-dark mb-1">Pomodoro</label>
+                                    <input type="number" id="setting-pomodoro" min="1" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                                </div>
+                                <div class="mb-4">
+                                    <label for="setting-short-break" class="block text-sm font-medium text-tertiary-dark mb-1">Short Break</label>
+                                    <input type="number" id="setting-short-break" min="1" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                                </div>
+                                <div class="mb-4">
+                                    <label for="setting-long-break" class="block text-sm font-medium text-tertiary-dark mb-1">Long Break</label>
+                                    <input type="number" id="setting-long-break" min="1" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                                </div>
+                                <div class="mb-4">
+                                    <label for="setting-pomodoro-rounds" class="block text-sm font-medium text-tertiary-dark mb-1">Rounds</label>
+                                    <input type="number" id="setting-pomodoro-rounds" min="1" value="4" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-8">
+                            <button type="submit" class="bg-primary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+                <div id="general-settings-panel" class="settings-panel hidden">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-secondary-dark border-b border-secondary-light pb-2">General Settings</h3>
+                        <div class="mb-4 flex items-center justify-between">
+                            <label for="setting-launch-on-startup" class="block text-sm font-medium text-tertiary-dark">Launch on Startup</label>
+                            <input type="checkbox" id="setting-launch-on-startup" class="rounded bg-white border-tertiary-light focus:ring-2 focus:ring-tertiary-dark">
+                        </div>
+                        <div class="mb-4">
+                            <label for="setting-sound" class="block text-sm font-medium text-tertiary-dark mb-1">Sound</label>
+                            <select id="setting-sound" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                                <option value="default">Default</option>
+                                <option value="option1">Option 1</option>
+                                <option value="option2">Option 2</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="setting-review-day" class="block text-sm font-medium text-tertiary-dark mb-1">Weekly Review Day</label>
+                            <select id="setting-review-day" class="w-full p-2 border border-tertiary-light rounded-md bg-white focus:ring-2 focus:ring-tertiary-dark">
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5">Friday</option>
+                                <option value="6">Saturday</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+                <div id="theme-settings-panel" class="settings-panel hidden">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-secondary-dark border-b border-secondary-light pb-2">Theme</h3>
+                        <p class="text-sm text-tertiary-dark">Choose how POM-TODO looks.</p>
+                        <div class="space-y-2" id="theme-selector">
+                            <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-secondary-light cursor-pointer">
+                                <input type="radio" name="theme" value="cloud-light" class="form-radio h-4 w-4 text-primary-dark focus:ring-primary-dark" checked>
+                                <span class="text-tertiary-dark">Cloud Light</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-secondary-light cursor-pointer">
+                                <input type="radio" name="theme" value="charcoal" class="form-radio h-4 w-4 text-primary-dark focus:ring-primary-dark">
+                                <span class="text-tertiary-dark">Charcoal</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-secondary-light cursor-pointer">
+                                <input type="radio" name="theme" value="radium" class="form-radio h-4 w-4 text-primary-dark focus:ring-primary-dark">
+                                <span class="text-tertiary-dark">Radium</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-secondary-light cursor-pointer">
+                                <input type="radio" name="theme" value="lilac" class="form-radio h-4 w-4 text-primary-dark focus:ring-primary-dark">
+                                <span class="text-tertiary-dark">Lilac</span>
+                            </label>
+                            
+                            <label class="flex items-center space-x-3 p-2 rounded-lg hover:bg-secondary-light cursor-pointer">
+                                <input type="radio" name="theme" value="bubblegum" class="form-radio h-4 w-4 text-primary-dark focus:ring-primary-dark">
+                                <span class="text-tertiary-dark">Bubblegum</span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div id="info-settings-panel" class="settings-panel hidden">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-secondary-dark border-b border-secondary-light pb-2">About POM-TODO</h3>
+                        <p class="text-sm text-tertiary-dark">POM-TODO is a productivity application designed to help you manage your tasks using the Pomodoro Technique. It combines a task manager with a Pomodoro timer to help you stay focused and track your work sessions.</p>
+                        <p class="text-sm text-tertiary-dark">This project is open-source. You can find the code and contribute on GitHub.</p>
+                        <a href="https://github.com/mudassiramin" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-center gap-2 bg-neutral-dark text-white py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                            <i data-lucide="github" class="w-4 h-4"></i>
+                            <span>Check out my Github page</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secret Menu Modal -->
+    <div id="secret-menu-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content scale-95">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-secondary-dark flex items-center gap-2">
+                    <i data-lucide="database" class="text-primary-dark"></i>Secret Data Menu
+                </h2>
+                <button id="close-secret-menu-btn" class="p-1 rounded-full hover:bg-secondary-light">
+                    <i data-lucide="x" class="text-secondary-dark"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-sm text-tertiary-dark">Raw localStorage data:</p>
+                <pre id="secret-data-content" class="bg-neutral-dark text-neutral-light p-4 rounded-lg overflow-x-auto text-xs font-mono"></pre>
+                <div class="flex justify-end pt-4">
+                    <button id="refresh-secret-data-btn" class="bg-primary-dark text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors text-sm">Refresh Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-secondary-dark text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300">
+        <p id="toast-message">Synced to Google Drive!</p>
+    </div>
+
+    <audio id="tick-sound" src="https://www.soundjay.com/clock/sounds/clock-ticking-1.mp3" loop></audio>
+    <audio id="alarm-sound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+
+    // --- App State and Constants ---
+    const POMODORO_TIME = 25 * 60;
+    const SHORT_BREAK_TIME = 5 * 60;
+    const LONG_BREAK_TIME = 15 * 60;
+    const MAX_TITLE_LENGTH_IN_RING = 14;
+
+    let state = {
+        tasks: [],
+        reviews: {}, // { "YYYY-MM-DD": "Review text" }
+        timer: {
+            displayMode: 'pomodoro', // 'pomodoro', 'stopwatch'
+            mode: 'pomodoro', // 'pomodoro', 'shortBreak', 'longBreak'
+            timeLeft: POMODORO_TIME,
+            isActive: false,
+            intervalId: null,
+            currentTaskId: null,
+        },
+        // NEW: State for the stopwatch
+        stopwatch: {
+            startTime: 0,
+            elapsedTime: 0,
+            isActive: false,
+            intervalId: null,
+            lastSecond: -1 // Used to check when to update the display
+        },
+        settings: {
+            pomodoroTime: 25,
+            shortBreakTime: 5,
+            longBreakTime: 15,
+            autoStartBreaks: false,
+            autoStartPomodoros: false,
+            theme: 'cloud-light',
+            reviewDayOfWeek: 0, // 0 = Sunday
+            customReviewInterval: 10,
+        },
+        stats: {
+            pomodorosCompleted: 0,
+            hoursFocused: 0,
+        },
+    };
+
+    // --- DOM Element Selectors ---
+    const signalTasksContainer = document.getElementById('signal-tasks');
+    const noiseTasksContainer = document.getElementById('noise-tasks');
+    const addTaskBtn = document.getElementById('add-task-btn');
+    const taskModal = document.getElementById('task-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const taskForm = document.getElementById('task-form');
+    const modalTitle = document.getElementById('modal-title');
+    const pomodoroModeBtn = document.getElementById('pomodoro-mode-btn');
+    const stopwatchModeBtn = document.getElementById('stopwatch-mode-btn');
+    const pomodoroUi = document.getElementById('pomodoro-ui');
+    const stopwatchUi = document.getElementById('stopwatch-ui');
+
+    // Pomodoro Elements
+    const timerDisplay = document.getElementById('timer-display');
+    const timerProgressRing = document.getElementById('timer-progress-ring');
+    const timerControlBtn = document.getElementById('timer-control-btn');
+    const timerResetBtn = document.getElementById('timer-reset-btn');
+    const skipPomodoroBtn = document.getElementById('skip-pomodoro-btn');
+    const timerTaskTitle = document.getElementById('timer-task-title');
+    const pomodoroCountDisplay = document.getElementById('pomodoro-count-display');
+    const timerStatus = document.getElementById('timer-status');
+
+    // NEW: Stopwatch Elements
+    const stopwatchDisplay = document.getElementById('stopwatch-display');
+    const stopwatchControlBtn = document.getElementById('stopwatch-control-btn');
+    const stopwatchTickContainer = document.getElementById('stopwatch-tick-container');
+
+    // Audio & Other Elements
+    const tickSound = document.getElementById('tick-sound');
+    const alarmSound = document.getElementById('alarm-sound');
+    const gdriveSyncBtn = document.getElementById('gdrive-sync-btn');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+    const aiModal = document.getElementById('ai-modal');
+    const aiAssistantBtn = document.getElementById('ai-assistant-btn');
+    const closeAiModalBtn = document.getElementById('close-ai-modal-btn');
+    const getAiAdviceBtn = document.getElementById('get-ai-advice-btn');
+    const aiResponse = document.getElementById('ai-response');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
+    const settingsForm = document.getElementById('settings-form');
+    const pomodoroSettingsBtn = document.getElementById('pomodoro-settings-btn');
+    const generalSettingsBtn = document.getElementById('general-settings-btn');
+    const themeSettingsBtn = document.getElementById('theme-settings-btn');
+    const infoSettingsBtn = document.getElementById('info-settings-btn');
+
+
+
+
+    // Pomodoro Ring Setup
+    const radius = timerProgressRing.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    timerProgressRing.style.strokeDasharray = `${circumference} ${circumference}`;
+    timerProgressRing.style.strokeDashoffset = circumference;
+
+    // --- NEW: Stopwatch Tick Generation ---
+    // Moved from stopwatch_ui.html to here, ensuring it runs after DOM is loaded
+    (function generateStopwatchTicks() {
+        if (!stopwatchTickContainer) return;
+
+        stopwatchTickContainer.innerHTML = ''; // Clear any existing ticks
+        const numTicks = 60;
+        const center = 50;
+        const radiusInner = 42;
+        const radiusOuter = 48;
+
+        for (let i = 0; i < numTicks; i++) {
+            const angle = (i / numTicks) * 2 * Math.PI;
+            const x1 = center + Math.cos(angle) * radiusInner;
+            const y1 = center + Math.sin(angle) * radiusInner;
+            const x2 = center + Math.cos(angle) * radiusOuter;
+            const y2 = center + Math.sin(angle) * radiusOuter;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('id', `stopwatch-tick-${i}`);
+            line.setAttribute('class', 'stopwatch-tick');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('stroke-width', '2.5');
+            stopwatchTickContainer.appendChild(line);
+        }
+    })();
+
+
+    // --- Utility Functions ---
+    const applyTheme = (themeName) => {
+        // Remove all theme classes
+        document.body.classList.remove('theme-charcoal', 'theme-radium', 'theme-lilac', 'theme-bubblegum');
+        
+        // Add the new theme class if it's not the default
+        if (themeName !== 'cloud-light') {
+            document.body.classList.add(`theme-${themeName}`);
+        }
+        
+        // Update the radio button state if it matches (for initial load)
+        const themeRadio = document.querySelector(`input[name="theme"][value="${themeName}"]`);
+        if (themeRadio) {
+            themeRadio.checked = true;
+        }
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60); // Use floor to handle potential floats
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
+
+    const updateDisplayModeUI = () => {
+        if (state.timer.displayMode === 'pomodoro') {
+            pomodoroModeBtn.classList.add('font-bold', 'text-secondary-dark');
+            pomodoroModeBtn.classList.remove('font-normal', 'text-tertiary-dark');
+            stopwatchModeBtn.classList.add('font-normal', 'text-tertiary-dark');
+            stopwatchModeBtn.classList.remove('font-bold', 'text-secondary-dark');
+            pomodoroUi.classList.remove('hidden');
+            stopwatchUi.classList.add('hidden');
+            // NEW: Pause and reset stopwatch when switching away
+            pauseStopwatch();
+            resetStopwatch();
+        } else { // stopwatch
+            stopwatchModeBtn.classList.add('font-bold', 'text-secondary-dark');
+            stopwatchModeBtn.classList.remove('font-normal', 'text-tertiary-dark');
+            pomodoroModeBtn.classList.add('font-normal', 'text-tertiary-dark');
+            pomodoroModeBtn.classList.remove('font-bold', 'text-secondary-dark');
+            stopwatchUi.classList.remove('hidden');
+            pomodoroUi.classList.add('hidden');
+            // Pause pomodoro when switching to stopwatch
+            pauseTimer();
+        }
+    };
+
+    const truncateText = (text, maxLength) => {
+        if (!text || text.length <= maxLength) {
+            return text;
+        }
+        return text.slice(0, maxLength).trim() + '...';
+    };
+
+    const showToast = (message) => {
+        toastMessage.textContent = message;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3000);
+    };
+
+    // --- Data Persistence (Simulated) ---
+    const saveState = () => {
+        localStorage.setItem('pomTodoState', JSON.stringify(state));
+    };
+
+    const loadState = () => {
+        const savedState = localStorage.getItem('pomTodoState');
+        if (savedState) {
+            // Merge saved state, but ensure timer/stopwatch are reset
+            const loaded = JSON.parse(savedState);
+            state.tasks = loaded.tasks || [];
+            state.reviews = loaded.reviews || {};
+            state.settings = loaded.settings || state.settings;
+            state.stats = loaded.stats || state.stats;
+            
+            // Reset timers on load
+            state.timer.isActive = false;
+            state.timer.intervalId = null;
+            state.timer.timeLeft = state.settings.pomodoroTime * 60;
+            state.stopwatch = { startTime: 0, elapsedTime: 0, isActive: false, intervalId: null, lastSecond: -1 };
+            
+            // Apply loaded theme
+            applyTheme(state.settings.theme || 'cloud-light');
+
+        } else {
+            // Add default tasks if no state is saved
+            state.tasks = [
+                { id: 1, title: 'CS50 for 3 hrs', category: 'signal', pomodoros: 6, completedPomodoros: 1, recurrence: 'daily', completed: false },
+                { id: 2, title: 'Review project brief', category: 'signal', pomodoros: 1, completedPomodoros: 0, recurrence: 'none', completed: false },
+                { id: 3, title: 'Check emails', category: 'noise', pomodoros: 1, completedPomodoros: 0, recurrence: 'daily', completed: true },
+            ];
+        }
+    };
+
+    // --- TaskList Component Logic ---
+    const renderTasks = () => {
+        signalTasksContainer.innerHTML = '';
+        noiseTasksContainer.innerHTML = '';
+        pomodoroCountDisplay.textContent = `${state.stats.pomodorosCompleted % 4}/4`;
+
+        if (state.tasks.length === 0) {
+            signalTasksContainer.innerHTML = `<p class="text-tertiary-dark">No tasks yet. Add one to get started!</p>`;
+        }
+
+        state.tasks.forEach(task => {
+            const taskItem = document.createElement('div');
+            taskItem.className = `task-item bg-white p-4 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md ${task.completed ? 'completed' : ''}`;
+            taskItem.dataset.id = task.id;
+
+            taskItem.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <button class="task-complete-btn flex-shrink-0 w-6 h-6 rounded-full border-2 ${task.completed ? 'bg-primary-dark border-primary-dark' : 'border-tertiary-light'} flex items-center justify-center">
+                        ${task.completed ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                    </button>
+                    <div>
+                        <p class="task-title font-medium text-secondary-dark">${task.title}</p>
+                        <p class="text-sm text-tertiary-dark">${task.completedPomodoros}/${task.pomodoros} Pomodoros</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="task-reset-btn p-2 rounded-md hover:bg-secondary-light"><i data-lucide="rotate-cw" class="w-5 h-5 text-tertiary-dark"></i></button>
+                    ${state.timer.currentTaskId === task.id && state.timer.isActive && state.timer.displayMode === 'pomodoro' ? 
+                        `<div class="w-6 h-6 rounded-full bg-primary-dark flex items-center justify-center animate-pulse"><div class="w-2 h-2 bg-white rounded-full"></div></div>` :
+                        `<button class="task-start-btn p-2 rounded-md hover:bg-secondary-light ${task.completed ? 'hidden' : ''}"><i data-lucide="play-circle" class="w-5 h-5 text-primary-dark"></i></button>`
+                    }
+                    <button class="task-edit-btn p-2 rounded-md hover:bg-secondary-light"><i data-lucide="edit-2" class="w-5 h-5 text-tertiary-dark"></i></button>
+                    <button class="task-delete-btn p-2 rounded-md hover:bg-secondary-light"><i data-lucide="trash-2" class="w-5 h-5 text-error"></i></button>
+                </div>
+            `;
+
+            if (task.category === 'signal') {
+                signalTasksContainer.appendChild(taskItem);
+            } else {
+                noiseTasksContainer.appendChild(taskItem);
+            }
+        });
+        lucide.createIcons();
+    };
+
+    // --- TaskForm Component Logic ---
+    const openTaskModal = (task = null) => {
+        taskForm.reset();
+        if (task) {
+            modalTitle.textContent = 'Edit Task';
+            document.getElementById('task-id').value = task.id;
+            document.getElementById('task-title-input').value = task.title;
+            document.getElementById('task-category').value = task.category;
+            document.getElementById('task-pomodoros').value = task.pomodoros;
+            document.getElementById('task-recurrence').value = task.recurrence;
+        } else {
+            modalTitle.textContent = 'Add New Task';
+            document.getElementById('task-id').value = '';
+        }
+        taskModal.classList.remove('hidden');
+        setTimeout(() => {
+            taskModal.querySelector('.modal-content').classList.remove('scale-95');
+            taskModal.classList.remove('opacity-0');
+        }, 10);
+    };
+
+    const closeTaskModal = () => {
+        taskModal.querySelector('.modal-content').classList.add('scale-95');
+        taskModal.classList.add('opacity-0');
+        setTimeout(() => taskModal.classList.add('hidden'), 300);
+    };
+
+    const handleTaskFormSubmit = (e) => {
+        e.preventDefault();
+        const id = document.getElementById('task-id').value;
+        const taskData = {
+            title: document.getElementById('task-title-input').value,
+            category: document.getElementById('task-category').value,
+            pomodoros: parseInt(document.getElementById('task-pomodoros').value),
+            recurrence: document.getElementById('task-recurrence').value,
+        };
+
+        if (id) {
+            const taskIndex = state.tasks.findIndex(t => t.id == id);
+            state.tasks[taskIndex] = { ...state.tasks[taskIndex], ...taskData };
+        } else {
+            const newTask = {
+                id: Date.now(),
+                completedPomodoros: 0,
+                completed: false,
+                ...taskData
+            };
+            state.tasks.push(newTask);
+        }
+        saveState();
+        renderApp();
+        closeTaskModal();
+    };
+
+    // --- Settings Modal Logic ---
+    const updateSettingsView = (activePanelId) => {
+        // Hide all panels
+        document.querySelectorAll('.settings-panel').forEach(panel => {
+            panel.classList.add('hidden');
+        });
+
+        // Show the active one
+        const activePanel = document.getElementById(activePanelId);
+        if (activePanel) {
+            activePanel.classList.remove('hidden');
+        }
+
+        // Update button styles
+        const navButtons = {
+            'pomodoro-settings-panel': pomodoroSettingsBtn,
+            'general-settings-panel': generalSettingsBtn,
+            'theme-settings-panel': themeSettingsBtn,
+            'info-settings-panel': infoSettingsBtn,
+        };
+
+        Object.values(navButtons).forEach(btn => btn.classList.remove('bg-secondary-light'));
+        if (navButtons[activePanelId]) {
+            navButtons[activePanelId].classList.add('bg-secondary-light');
+        }
+    };
+    // --- Settings Modal Logic ---
+    const openSettingsModal = () => {
+        // Populate form with current settings from state
+        document.getElementById('setting-pomodoro').value = state.settings.pomodoroTime;
+        document.getElementById('setting-short-break').value = state.settings.shortBreakTime;
+        document.getElementById('setting-long-break').value = state.settings.longBreakTime;
+        document.getElementById('setting-review-day').value = state.settings.reviewDayOfWeek || 0;
+
+        settingsModal.classList.remove('hidden');
+        setTimeout(() => {
+            settingsModal.querySelector('.modal-content').classList.remove('scale-95');
+            settingsModal.classList.remove('opacity-0');
+        }, 10);
+
+        // Set the default view
+        updateSettingsView('pomodoro-settings-panel');
+    };
+
+    const closeSettingsModal = () => {
+        settingsModal.querySelector('.modal-content').classList.add('scale-95');
+        settingsModal.classList.add('opacity-0');
+        setTimeout(() => settingsModal.classList.add('hidden'), 300);
+    };
+
+    const handleSettingsFormSubmit = (e) => {
+        e.preventDefault();
+        state.settings.pomodoroTime = parseInt(document.getElementById('setting-pomodoro').value);
+        state.settings.shortBreakTime = parseInt(document.getElementById('setting-short-break').value);
+        state.settings.longBreakTime = parseInt(document.getElementById('setting-long-break').value);
+        state.settings.reviewDayOfWeek = parseInt(document.getElementById('setting-review-day').value);
+
+        saveState();
+        closeSettingsModal();
+        showToast('Settings saved!');
+
+        // Reset the current timer to apply new settings if it's not active
+        if (!state.timer.isActive) {
+            resetTimer(state.timer.mode, state.timer.currentTaskId);
+        }
+        
+        // Re-render calendar if review day changed
+        renderCalendar();
+    };
+
+    // --- Pomodoro Timer Logic ---
+    const updateTimerDisplay = () => {
+        timerDisplay.textContent = formatTime(state.timer.timeLeft);
+        const totalDuration = state.timer.mode === 'pomodoro' ? state.settings.pomodoroTime * 60 : (state.timer.mode === 'shortBreak' ? state.settings.shortBreakTime * 60 : state.settings.longBreakTime * 60);
+        const progress = (totalDuration - state.timer.timeLeft) / totalDuration;
+        const offset = circumference - progress * circumference;
+        timerProgressRing.style.strokeDashoffset = offset;
+    };
+
+    const startTimer = () => {
+        if (state.timer.isActive) return;
+        state.timer.isActive = true;
+        timerControlBtn.textContent = 'PAUSE';
+        tickSound.play();
+
+        state.timer.intervalId = setInterval(() => {
+            state.timer.timeLeft--;
+            updateTimerDisplay();
+            if (state.timer.timeLeft <= 0) {
+                clearInterval(state.timer.intervalId);
+                handleTimerEnd();
+            }
+        }, 1000);
+        renderTasks();
+    };
+
+    const pauseTimer = () => {
+        if (!state.timer.isActive) return;
+        state.timer.isActive = false;
+        clearInterval(state.timer.intervalId);
+        timerControlBtn.textContent = 'START';
+        tickSound.pause();
+        renderTasks();
+    };
+
+    const resetTimer = (mode = 'pomodoro', taskId = null) => {
+        pauseTimer();
+        state.timer.mode = mode;
+        state.timer.currentTaskId = taskId;
+        
+        const currentTask = state.tasks.find(t => t.id === taskId);
+        timerTaskTitle.textContent = currentTask ? truncateText(currentTask.title, MAX_TITLE_LENGTH_IN_RING) : '';
+
+        switch (mode) {
+            case 'pomodoro':
+                state.timer.timeLeft = state.settings.pomodoroTime * 60;
+                timerStatus.textContent = 'Time to focus!';
+                break;
+            case 'shortBreak':
+                state.timer.timeLeft = state.settings.shortBreakTime * 60;
+                timerStatus.textContent = 'Time for a short break!';
+                break;
+            case 'longBreak':
+                state.timer.timeLeft = state.settings.longBreakTime * 60;
+                timerStatus.textContent = 'Time for a long break!';
+                break;
+        }
+        updateTimerDisplay();
+    };
+
+    const handleTimerEnd = () => {
+        state.timer.isActive = false;
+        tickSound.pause();
+        alarmSound.play();
+        
+        if (Notification.permission === "granted") {
+            new Notification("POM-TODO", { body: `${timerStatus.textContent} is over!` });
+        }
+
+        if (state.timer.mode === 'pomodoro') {
+            if (state.timer.currentTaskId) {
+                const task = state.tasks.find(t => t.id === state.timer.currentTaskId);
+                if (task) {
+                    task.completedPomodoros++;
+                    if (task.completedPomodoros >= task.pomodoros) {
+                        task.completed = true;
+                    }
+                }
+            }
+            state.stats.pomodorosCompleted++; // Increment here
+            const nextMode = state.stats.pomodorosCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
+            resetTimer(nextMode);
+        } else {
+            // Break ended, start next pomodoro
+            resetTimer('pomodoro', state.timer.currentTaskId);
+        }
+        saveState();
+        renderApp();
+    };
+
+    const handleTimerControlClick = () => {
+        if (state.timer.isActive) {
+            pauseTimer();
+        } else {
+            startTimer();
+        }
+    };
+
+    const skipPomodoro = () => {
+        pauseTimer();
+        alarmSound.play();
+        if (state.timer.mode === 'pomodoro') {
+            state.stats.pomodorosCompleted++; // Count skipped pomodoro
+            if (state.timer.currentTaskId) {
+                const task = state.tasks.find(t => t.id === state.timer.currentTaskId);
+                if (task) {
+                    task.completedPomodoros++;
+                    if (task.completedPomodoros >= task.pomodoros) {
+                        task.completed = true;
+                    }
+                }
+            }
+            const nextMode = state.stats.pomodorosCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
+            resetTimer(nextMode, state.timer.currentTaskId);
+        } else {
+            // Skipping a break, go back to a pomodoro session
+            resetTimer('pomodoro', state.timer.currentTaskId);
+        }
+        saveState(); // Save state after skipping
+        renderApp();
+        startTimer(); // Automatically start the next session
+    };
+
+    // --- NEW: Stopwatch Logic ---
+    const updateStopwatchDisplay = (totalSeconds) => {
+        // Update 00:00 display
+        stopwatchDisplay.textContent = formatTime(totalSeconds);
+
+        // Update 60-tick ring
+        const currentSecondOnRing = totalSeconds % 60;
+        const allTicks = stopwatchTickContainer.querySelectorAll('.stopwatch-tick');
+
+        allTicks.forEach((tick, index) => {
+            if (index < currentSecondOnRing) {
+                tick.classList.add('active');
+            } else {
+                tick.classList.remove('active');
+            }
+        });
+        // Handle the 60th second (which is 0 on the ring)
+        if (totalSeconds > 0 && currentSecondOnRing === 0) {
+             allTicks.forEach(tick => tick.classList.add('active'));
+        }
+         // Handle 0 seconds (reset)
+        if (totalSeconds === 0) {
+            allTicks.forEach(tick => tick.classList.remove('active'));
+        }
+    };
+
+    const startStopwatch = () => {
+        if (state.stopwatch.isActive) return;
+        state.stopwatch.isActive = true;
+        stopwatchControlBtn.textContent = 'PAUSE';
+
+        // Start time is now, minus any time that has already elapsed
+        state.stopwatch.startTime = Date.now() - state.stopwatch.elapsedTime;
+        
+        state.stopwatch.intervalId = setInterval(() => {
+            const elapsedMilliseconds = Date.now() - state.stopwatch.startTime;
+            state.stopwatch.elapsedTime = elapsedMilliseconds;
+            
+            const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+            
+            // Only update the display if the second has changed
+            if (totalSeconds !== state.stopwatch.lastSecond) {
+                updateStopwatchDisplay(totalSeconds);
+                state.stopwatch.lastSecond = totalSeconds;
+            }
+        }, 100); // Check 10 times per second for responsive start/stop
+    };
+
+    const pauseStopwatch = () => {
+        if (!state.stopwatch.isActive) return;
+        state.stopwatch.isActive = false;
+        clearInterval(state.stopwatch.intervalId);
+        stopwatchControlBtn.textContent = 'START';
+    };
+
+    const resetStopwatch = () => {
+        pauseStopwatch();
+        state.stopwatch.elapsedTime = 0;
+        state.stopwatch.startTime = 0;
+        state.stopwatch.lastSecond = -1;
+        updateStopwatchDisplay(0); // Reset display to 00:00 and clear ticks
+    };
+
+    // --- Event Handlers ---
+    addTaskBtn.addEventListener('click', () => openTaskModal());
+    closeModalBtn.addEventListener('click', closeTaskModal);
+    taskModal.addEventListener('click', (e) => {
+        if (e.target === taskModal) closeTaskModal();
+    });
+    taskForm.addEventListener('submit', handleTaskFormSubmit);
+
+    // Timer Mode Switching
+    pomodoroModeBtn.addEventListener('click', () => {
+        state.timer.displayMode = 'pomodoro';
+        updateDisplayModeUI();
+    });
+    stopwatchModeBtn.addEventListener('click', () => {
+        state.timer.displayMode = 'stopwatch';
+        updateDisplayModeUI();
+    });
+
+    // Task Actions
+    const handleTaskActions = (e) => {
+        const taskItem = e.target.closest('.task-item');
+        if (!taskItem) return;
+        const taskId = parseInt(taskItem.dataset.id);
+
+        if (e.target.closest('.task-complete-btn')) {
+            const task = state.tasks.find(t => t.id === taskId);
+            task.completed = !task.completed;
+        }
+        if (e.target.closest('.task-reset-btn')) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completedPomodoros = 0;
+                task.completed = false;
+            }
+        }
+        if (e.target.closest('.task-edit-btn')) {
+            const task = state.tasks.find(t => t.id === taskId);
+            openTaskModal(task);
+        }
+        if (e.target.closest('.task-delete-btn')) {
+            state.tasks = state.tasks.filter(t => t.id !== taskId);
+            if (state.timer.currentTaskId === taskId) {
+                resetTimer('pomodoro'); // Reset timer if active task is deleted
+            }
+        }
+        if (e.target.closest('.task-start-btn')) {
+            resetTimer('pomodoro', taskId);
+            startTimer();
+        }
+        saveState();
+        renderApp();
+    };
+
+    signalTasksContainer.addEventListener('click', handleTaskActions);
+    noiseTasksContainer.addEventListener('click', handleTaskActions);
+
+    // Pomodoro Controls
+    timerControlBtn.addEventListener('click', handleTimerControlClick);
+    timerResetBtn.addEventListener('click', () => resetTimer(state.timer.mode, state.timer.currentTaskId));
+    skipPomodoroBtn.addEventListener('click', skipPomodoro);
+
+    // NEW: Stopwatch Controls
+    stopwatchControlBtn.addEventListener('click', () => {
+        if (state.stopwatch.isActive) {
+            pauseStopwatch();
+        } else {
+            startStopwatch();
+        }
+    });
+
+    // Other UI Controls
+    gdriveSyncBtn.addEventListener('click', () => {
+        saveState();
+        showToast('Synced to Google Drive!');
+    });
+    
+    // AI Modal Logic
+    const aiAdvices = [
+        "You've been working hard! Remember to stretch and hydrate.",
+        "Try breaking down your biggest 'Signal' task into smaller sub-tasks.",
+        "Great focus! Consider taking a 5-minute walk to refresh your mind.",
+        "Your productivity is high. Keep up the momentum!",
+        "Feeling stuck? Switch to a 'Noise' task for a quick win."
+    ];
+    aiAssistantBtn.addEventListener('click', () => aiModal.classList.remove('hidden'));
+    closeAiModalBtn.addEventListener('click', () => aiModal.classList.add('hidden'));
+    getAiAdviceBtn.addEventListener('click', () => {
+        const randomIndex = Math.floor(Math.random() * aiAdvices.length);
+        aiResponse.innerHTML = `<p>${aiAdvices[randomIndex]}</p>`;
+    });
+
+    // Settings Modal
+    settingsBtn.addEventListener('click', openSettingsModal);
+
+    // --- Secret Menu Logic ---
+    const secretMenuModal = document.getElementById('secret-menu-modal');
+    const closeSecretMenuBtn = document.getElementById('close-secret-menu-btn');
+    const secretDataContent = document.getElementById('secret-data-content');
+    const refreshSecretDataBtn = document.getElementById('refresh-secret-data-btn');
+
+    const openSecretMenu = () => {
+        const allData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            try {
+                allData[key] = JSON.parse(localStorage.getItem(key));
+            } catch (e) {
+                allData[key] = localStorage.getItem(key);
+            }
+        }
+        secretDataContent.textContent = JSON.stringify(allData, null, 2);
+
+        secretMenuModal.classList.remove('hidden');
+        setTimeout(() => {
+            secretMenuModal.querySelector('.modal-content').classList.remove('scale-95');
+            secretMenuModal.classList.remove('opacity-0');
+        }, 10);
+    };
+
+    const closeSecretMenu = () => {
+        secretMenuModal.querySelector('.modal-content').classList.add('scale-95');
+        secretMenuModal.classList.add('opacity-0');
+        setTimeout(() => secretMenuModal.classList.add('hidden'), 300);
+    };
+
+    if (closeSecretMenuBtn) closeSecretMenuBtn.addEventListener('click', closeSecretMenu);
+    if (refreshSecretDataBtn) refreshSecretDataBtn.addEventListener('click', openSecretMenu);
+    if (secretMenuModal) secretMenuModal.addEventListener('click', (e) => {
+        if (e.target === secretMenuModal) closeSecretMenu();
+    });
+
+    // Triple Click on Settings (Gear) Icon in the Menu (General Settings Tab)
+    let generalSettingsClickCount = 0;
+    let generalSettingsClickTimer = null;
+
+    if (generalSettingsBtn) {
+        generalSettingsBtn.addEventListener('click', () => {
+            generalSettingsClickCount++;
+            if (generalSettingsClickCount === 3) {
+                openSecretMenu();
+                generalSettingsClickCount = 0;
+                clearTimeout(generalSettingsClickTimer);
+            } else {
+                clearTimeout(generalSettingsClickTimer);
+                generalSettingsClickTimer = setTimeout(() => {
+                    generalSettingsClickCount = 0;
+                }, 500);
+            }
+        });
+    }
+    closeSettingsModalBtn.addEventListener('click', closeSettingsModal);
+    settingsForm.addEventListener('submit', handleSettingsFormSubmit);
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) closeSettingsModal();
+    });
+    pomodoroSettingsBtn.addEventListener('click', () => updateSettingsView('pomodoro-settings-panel'));
+    themeSettingsBtn.addEventListener('click', () => updateSettingsView('theme-settings-panel'));
+    
+    // Theme Selector Logic
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
+    themeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const newTheme = e.target.value;
+            state.settings.theme = newTheme;
+            applyTheme(newTheme);
+            saveState();
+        });
+    });
+
+    generalSettingsBtn.addEventListener('click', () => {
+        // For now, general settings is empty. We can add content later.
+        updateSettingsView('general-settings-panel');
+
+        // Load values from state
+        document.getElementById('setting-launch-on-startup').checked = false;
+
+    });
+    infoSettingsBtn.addEventListener('click', () => {
+        updateSettingsView('info-settings-panel');
+        lucide.createIcons(); // Re-render icons if they are added dynamically
+    });
+
+    // --- Weekly Review Logic ---
+    let currentCalendarDate = new Date();
+    state.reviewDurationMode = 'day'; // 'day', 'week', 'month', 'custom'
+
+    // Selectors
+    const dashboardView = document.getElementById('dashboard-view');
+    const weeklyReviewView = document.getElementById('weekly-review-view');
+    const dashboardBtn = document.getElementById('dashboard-btn');
+    const weeklyReviewBtn = document.getElementById('weekly-review-btn');
+    const calendarGrid = document.getElementById('calendar-grid');
+    const calendarMonthYear = document.getElementById('calendar-month-year');
+    const prevMonthBtn = document.getElementById('prev-month-btn');
+    const nextMonthBtn = document.getElementById('next-month-btn');
+    const reviewDurationSelector = document.getElementById('review-duration-selector');
+    const customDurationInput = document.getElementById('custom-duration-input');
+
+    // Sidebar Selectors
+    const sidebarDashboardContent = document.getElementById('sidebar-dashboard-content');
+    const sidebarReviewContent = document.getElementById('sidebar-review-content');
+    const sidebarReviewDateLabel = document.getElementById('sidebar-review-date-label');
+    const sidebarReviewText = document.getElementById('sidebar-review-text');
+    const sidebarSaveReviewBtn = document.getElementById('sidebar-save-review-btn');
+    const sidebarDeleteReviewBtn = document.getElementById('sidebar-delete-review-btn');
+
+    let selectedReviewId = null; // ID used for saving
+
+    // Helper: Get Week Key (YYYY-Www)
+    const getWeekKey = (date) => {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        return `${d.getUTCFullYear()}-W${weekNo}`;
+    };
+
+    // Helper: Get Month Key (YYYY-MM)
+    const getMonthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+    // Helper: Get Day of Year
+    const getDayOfYear = (date) => {
+        const start = new Date(date.getFullYear(), 0, 0);
+        const diff = date - start;
+        const oneDay = 1000 * 60 * 60 * 24;
+        return Math.floor(diff / oneDay);
+    };
+
+    // View Switching
+    const switchView = (view) => {
+        if (view === 'dashboard') {
+            dashboardView.classList.remove('hidden');
+            weeklyReviewView.classList.add('hidden');
+            
+            sidebarDashboardContent.classList.remove('hidden');
+            sidebarReviewContent.classList.add('hidden');
+
+            dashboardBtn.classList.remove('hover:bg-tertiary-dark');
+            dashboardBtn.classList.add('bg-tertiary-dark');
+            weeklyReviewBtn.classList.add('hover:bg-tertiary-dark');
+            weeklyReviewBtn.classList.remove('bg-tertiary-dark');
+        } else {
+            dashboardView.classList.add('hidden');
+            weeklyReviewView.classList.remove('hidden');
+            
+            sidebarDashboardContent.classList.add('hidden');
+            sidebarReviewContent.classList.remove('hidden');
+
+            weeklyReviewBtn.classList.remove('hover:bg-tertiary-dark');
+            weeklyReviewBtn.classList.add('bg-tertiary-dark');
+            dashboardBtn.classList.add('hover:bg-tertiary-dark');
+            dashboardBtn.classList.remove('bg-tertiary-dark');
+            
+            renderCalendar();
+            // Reset selection or load initial state if needed
+            if (!selectedReviewId) {
+                sidebarReviewDateLabel.textContent = "Select a date to review.";
+                sidebarReviewText.value = "";
+                sidebarDeleteReviewBtn.classList.add('hidden');
+            }
+        }
+    };
+
+    dashboardBtn.addEventListener('click', () => switchView('dashboard'));
+    weeklyReviewBtn.addEventListener('click', () => switchView('weekly-review'));
+
+    // Duration Selector
+    reviewDurationSelector.addEventListener('change', (e) => {
+        state.reviewDurationMode = e.target.value;
+        
+        if (state.reviewDurationMode === 'custom') {
+            customDurationInput.classList.remove('hidden');
+            customDurationInput.value = state.settings.customReviewInterval;
+        } else {
+            customDurationInput.classList.add('hidden');
+        }
+
+        selectedReviewId = null; 
+        sidebarReviewText.value = '';
+        sidebarReviewDateLabel.textContent = "Select a date to review.";
+        sidebarDeleteReviewBtn.classList.add('hidden');
+        renderCalendar();
+    });
+
+    customDurationInput.addEventListener('change', (e) => {
+        const val = parseInt(e.target.value);
+        if (val > 0) {
+            state.settings.customReviewInterval = val;
+            saveState();
+            renderCalendar();
+        }
+    });
+
+    // Calendar Rendering
+    const renderCalendar = () => {
+        calendarGrid.innerHTML = '';
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+        
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            calendarGrid.appendChild(document.createElement('div'));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateObj = new Date(year, month, day);
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayOfWeek = dateObj.getDay(); // 0 is Sunday
+            const dayOfYear = getDayOfYear(dateObj);
+
+            // Determine Review ID based on mode
+            let currentId;
+            let isActiveDay = true;
+
+            if (state.reviewDurationMode === 'day') {
+                currentId = dateStr;
+            } else if (state.reviewDurationMode === 'week') {
+                currentId = getWeekKey(dateObj);
+                isActiveDay = (dayOfWeek === (state.settings.reviewDayOfWeek || 0)); 
+            } else if (state.reviewDurationMode === 'month') {
+                currentId = getMonthKey(dateObj);
+                isActiveDay = (day === daysInMonth); // Only last day is active
+            } else if (state.reviewDurationMode === 'custom') {
+                currentId = dateStr; // For custom, we save on the specific day
+                const interval = state.settings.customReviewInterval || 10;
+                isActiveDay = (dayOfYear % interval === 0);
+            }
+
+            // Check if selected
+            const isSelected = selectedReviewId === currentId;
+            // Check if review exists
+            const hasReview = state.reviews[currentId];
+
+            const dayCell = document.createElement('div');
+            
+            // Dynamic Classes
+            let bgClass = 'bg-white';
+            let textClass = 'text-secondary-dark';
+            let borderClass = 'border-tertiary-light';
+            let opacityClass = isActiveDay ? 'opacity-100 cursor-pointer hover:shadow-md' : 'opacity-30 cursor-default';
+
+            if (isActiveDay) {
+                 if (isSelected) {
+                    bgClass = 'bg-tertiary-light'; // Highlight selection
+                    borderClass = 'border-primary-dark ring-2 ring-primary-dark';
+                } else if (hasReview) {
+                    bgClass = 'bg-primary-dark';
+                    textClass = 'text-neutral-light';
+                    borderClass = 'border-primary-dark';
+                } else {
+                    dayCell.classList.add('hover:bg-secondary-light');
+                }
+                
+                 dayCell.addEventListener('click', () => handleDayClick(dateObj, currentId));
+            }
+
+            dayCell.className = `rounded-lg p-2 h-24 border transition-all flex flex-col justify-between ${bgClass} ${textClass} ${borderClass} ${opacityClass}`;
+            
+            dayCell.innerHTML = `
+                <span class="font-bold">${day}</span>
+                ${hasReview && isActiveDay ? '<i data-lucide="file-text" class="w-4 h-4 self-end opacity-80"></i>' : ''}
+            `;
+            
+            calendarGrid.appendChild(dayCell);
+        }
+        lucide.createIcons();
+    };
+
+    // Handle Day Click
+    const handleDayClick = (dateObj, reviewId) => {
+        selectedReviewId = reviewId;
+        renderCalendar(); // Re-render to show selection highlight
+
+        // Update Sidebar
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        let labelText = "";
+
+        if (state.reviewDurationMode === 'day' || state.reviewDurationMode === 'custom') {
+            labelText = dateObj.toLocaleDateString('en-US', { ...options, year: 'numeric' });
+            if (state.reviewDurationMode === 'custom') {
+                labelText += ` (Every ${state.settings.customReviewInterval} days)`;
+            }
+        } else if (state.reviewDurationMode === 'week') {
+            labelText = `Week ${reviewId.split('-W')[1]} of ${reviewId.split('-W')[0]}`;
+        } else if (state.reviewDurationMode === 'month') {
+            labelText = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+
+        sidebarReviewDateLabel.textContent = labelText;
+        sidebarReviewText.value = state.reviews[reviewId] || '';
+        
+        if (state.reviews[reviewId]) {
+            sidebarDeleteReviewBtn.classList.remove('hidden');
+        } else {
+            sidebarDeleteReviewBtn.classList.add('hidden');
+        }
+        
+        // Focus for better UX
+        sidebarReviewText.focus();
+    };
+
+    // Sidebar Review Actions
+    sidebarSaveReviewBtn.addEventListener('click', () => {
+        if (!selectedReviewId) return;
+        const text = sidebarReviewText.value.trim();
+        
+        if (text) {
+            state.reviews[selectedReviewId] = text;
+            showToast('Review saved!');
+        } else {
+            delete state.reviews[selectedReviewId]; // Don't save empty
+            showToast('Empty review discarded.');
+        }
+        
+        saveState();
+        renderCalendar();
+        // Update delete button visibility
+        if (state.reviews[selectedReviewId]) {
+            sidebarDeleteReviewBtn.classList.remove('hidden');
+        } else {
+            sidebarDeleteReviewBtn.classList.add('hidden');
+        }
+    });
+
+    sidebarDeleteReviewBtn.addEventListener('click', () => {
+        if (!selectedReviewId) return;
+        delete state.reviews[selectedReviewId];
+        sidebarReviewText.value = '';
+        saveState();
+        renderCalendar();
+        sidebarDeleteReviewBtn.classList.add('hidden');
+        showToast('Review deleted!');
+    });
+
+
+    // Calendar Navigation
+    prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+    });
+
+
+    // --- App Initialization ---
+    const renderApp = () => {
+        renderTasks();
+        updateTimerDisplay(); // Renders pomodoro timer
+        updateStopwatchDisplay(Math.floor(state.stopwatch.elapsedTime / 1000)); // Renders stopwatch
+        updateDisplayModeUI(); // Manages visibility
+    };
+
+    const init = () => {
+        // Set current date 
+        const today = new Date();
+        const options = { weekday: 'long', day: 'numeric', month: 'short' };
+        document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', options).toUpperCase();
+
+        // Request notification permission
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+
+        loadState();
+        resetTimer('pomodoro');
+        resetStopwatch();
+        renderApp();
+    };
+
+    init();
+});
+
+    </script>
+</body>
+</html>

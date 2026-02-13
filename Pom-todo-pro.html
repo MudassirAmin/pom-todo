@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POM-TODO Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* THEME VARIABLES */
+        :root {
+            /* Cloud Light (Default) */
+            --color-primary-dark: #00424a;
+            --color-primary-light: #edfcff;
+            --color-secondary-dark: #273f43;
+            --color-secondary-light: #dbf6fa;
+            --color-tertiary-dark: #2f3b58;
+            --color-tertiary-light: #bac6ea;
+            --color-background: #cde7ec;
+            --color-error: #de3730;
+            --color-neutral-dark: #393c3d;
+            --color-neutral-light: #f8fafa;
+        }
+
+        /* Charcoal Theme */
+        body.theme-charcoal {
+            --color-primary-dark: #64ffda;
+            --color-primary-light: #1d3b36;
+            --color-secondary-dark: #e6f1f5;
+            --color-secondary-light: #233036;
+            --color-tertiary-dark: #a7b7d6;
+            --color-tertiary-light: #303d55;
+            --color-background: #101518;
+            --color-error: #ff5252;
+            --color-neutral-dark: #e0e0e0;
+            --color-neutral-light: #1b2226;
+        }
+
+        /* Radium Theme */
+        body.theme-radium {
+            --color-primary-dark: #39ff14;
+            --color-primary-light: #0a1f05;
+            --color-secondary-dark: #ffffff;
+            --color-secondary-light: #1a1a1a;
+            --color-tertiary-dark: #b3ffb3;
+            --color-tertiary-light: #2d2d2d;
+            --color-background: #000000;
+            --color-error: #ff0055;
+            --color-neutral-dark: #ffffff;
+            --color-neutral-light: #111111;
+        }
+
+        /* Lilac Theme */
+        body.theme-lilac {
+            --color-primary-dark: #7b1fa2;
+            --color-primary-light: #f3e5f5;
+            --color-secondary-dark: #4a148c;
+            --color-secondary-light: #e1bee7;
+            --color-tertiary-dark: #6a1b9a;
+            --color-tertiary-light: #ce93d8;
+            --color-background: #f3e5f5;
+            --color-error: #c62828;
+            --color-neutral-dark: #4a148c;
+            --color-neutral-light: #ffffff;
+        }
+
+        /* Bubblegum Theme */
+        body.theme-bubblegum {
+            --color-primary-dark: #e91e63;
+            --color-primary-light: #fce4ec;
+            --color-secondary-dark: #0d47a1;
+            --color-secondary-light: #bbdefb;
+            --color-tertiary-dark: #880e4f;
+            --color-tertiary-light: #f8bbd0;
+            --color-background: #e3f2fd;
+            --color-error: #d32f2f;
+            --color-neutral-dark: #212121;
+            --color-neutral-light: #ffffff;
+        }
+
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-secondary-light);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-secondary-dark);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary-dark);
+        }
+        /* Custom styles for the circular progress bar */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        /* Task item animations */
+        .task-item {
+            transition: all 0.2s ease;
+            cursor: grab;
+        }
+        .task-item:active {
+            cursor: grabbing;
+        }
+        .task-item.dragging {
+            opacity: 0.5;
+            background-color: var(--color-secondary-light);
+            border: 2px dashed var(--color-tertiary-dark);
+        }
+        .task-item.completed {
+            opacity: 0.6;
+        }
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: var(--color-tertiary-dark);
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        /* Custom focus ring */
+        *:focus-visible {
+            outline: 2px solid var(--color-tertiary-dark);
+            outline-offset: 2px;
+        }
+        .stopwatch-tick {
+            stroke: var(--color-tertiary-light); /* Corresponds to text-tertiary-light */
+            transition: stroke 0.2s ease-in-out;
+        }
+        .stopwatch-tick.active {
+            stroke: var(--color-primary-dark); /* Corresponds to text-primary-dark */
+        }
+
+        /* --- THEME CONTRAST FIXES --- */
+        body.theme-charcoal .bg-white,
+        body.theme-radium .bg-white,
+        body.theme-charcoal .bg-white *,
+        body.theme-radium .bg-white * {
+            --color-secondary-dark: #1a202c;
+            --color-tertiary-dark: #4a5568;
+            --color-neutral-dark: #2d3748;
+            --color-primary-dark: #276749;
+        }
+
+        /* Ensure form controls inside white segments have dark text */
+        body.theme-charcoal .bg-white input,
+        body.theme-charcoal .bg-white select,
+        body.theme-charcoal .bg-white textarea,
+        body.theme-radium .bg-white input,
+        body.theme-radium .bg-white select,
+        body.theme-radium .bg-white textarea {
+            color: #1a202c !important;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': 'var(--color-primary-dark)',
+                        'primary-light': 'var(--color-primary-light)',
+                        'secondary-dark': 'var(--color-secondary-dark)',
+                        'secondary-light': 'var(--color-secondary-light)',
+                        'tertiary-dark': 'var(--color-tertiary-dark)',
+                        'tertiary-light': 'var(--color-tertiary-light)',
+                        'background': 'var(--color-background)',
+                        'error': 'var(--color-error)',
+                        'neutral-dark': 'var(--color-neutral-dark)',
+                        'neutral-light': 'var(--color-neutral-light)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-neutral-dark antialiased">
+
+    <div id="app" class="flex h-screen w-screen overflow-hidden">
+        <!-- Left Sidebar -->
+        <aside class="hidden md:flex flex-col items-center w-20 bg-secondary-dark text-neutral-light p-4 space-y-8">
+            <div class="w-10 h-10 bg-tertiary-dark rounded-full flex items-center justify-center font-bold text-lg cursor-default select-none">
+                P
+            </div>
+            <nav class="flex flex-col items-center space-y-6 mt-12 flex-grow">
+                <button id="dashboard-btn" class="p-2 rounded-lg bg-tertiary-dark transition-colors" title="Dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                </button>
+                <button id="weekly-review-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors" title="Analytics & Review">
+                    <i data-lucide="bar-chart-3"></i>
+                </button>
+                <button id="ai-assistant-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors" title="AI Coach">
+                    <i data-lucide="sparkles"></i>
+                </button>
+            </nav>
+            <div class="flex flex-col items-center space-y-6">
+                <button id="settings-btn" class="p-2 rounded-lg hover:bg-tertiary-dark transition-colors" title="Settings">
+                    <i data-lucide="settings"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col bg-neutral-light overflow-hidden">
+            <!-- Header -->
+            <header class="flex items-center justify-between p-4 border-b border-secondary-light bg-neutral-light flex-shrink-0">
+                <div class="flex items-center space-x-4">
+                    <button class="md:hidden p-2 rounded-md hover:bg-secondary-light">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <h1 class="font-bold text-lg text-secondary-dark" id="current-date">Loading...</h1>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="hidden sm:flex items-center space-x-1 text-secondary-dark">
+                        <!-- Window controls simulation (for aesthetic match to original) -->
+                        <div class="w-3 h-3 rounded-full bg-tertiary-light"></div>
+                        <div class="w-3 h-3 rounded-full bg-tertiary-light"></div>
+                        <div class="w-3 h-3 rounded-full bg-error opacity-50"></div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View (Tasks & Timer) -->
+            <div id="dashboard-view" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                
+                <div class="bg-secondary-light p-6 rounded-xl mb-8 flex flex-col xl:flex-row items-start justify-between gap-6">
+                    <div class="flex-1 w-full">
+                        <div id="add-task-header" class="bg-neutral-light p-6 rounded-xl mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                            <h2 class="text-2xl font-bold text-secondary-dark">My Tasks</h2>
+
+                            <button id="add-task-btn" class="flex items-center space-x-2 bg-primary-dark text-neutral-light px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors shadow-sm">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                                <span>New Task</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Signal Tasks -->
+                        <section class="mb-6">
+                            <h2 class="text-lg font-bold text-secondary-dark mb-3 flex items-center gap-2">
+                                <i data-lucide="zap" class="w-4 h-4 text-primary-dark"></i> Signal (High Priority)
+                            </h2>
+                            <div id="signal-tasks" class="space-y-3 min-h-[50px] p-2 rounded-lg border-2 border-transparent transition-colors drag-container" data-category="signal">
+                                <!-- Tasks will be injected here -->
+                            </div>
+                        </section>
+
+                        <!-- Noise Tasks -->
+                        <section>
+                            <h2 class="text-lg font-bold text-secondary-dark mb-3 flex items-center gap-2">
+                                <i data-lucide="wind" class="w-4 h-4 text-tertiary-dark"></i> Noise (Low Priority)
+                            </h2>
+                            <div id="noise-tasks" class="space-y-3 min-h-[50px] p-2 rounded-lg border-2 border-transparent transition-colors drag-container" data-category="noise">
+                                <!-- Tasks will be injected here -->
+                            </div>
+                        </section>
+                    </div>
+                    
+                    <!-- Pomodoro Timer Display card -->
+                    <div id="pomodoro-display" class="flex-shrink-0 mx-auto xl:mx-0">
+                        <div class="bg-neutral-light rounded-xl p-6 w-80 h-[480px] shadow-lg flex flex-col justify-between relative overflow-hidden">
+                            <!-- Mode Switcher -->
+                            <div class="flex items-center justify-center gap-6 mb-2 z-10">
+                                <button id="pomodoro-mode-btn" class="font-bold text-lg text-secondary-dark border-b-2 border-primary-dark pb-1 transition-all">Timer</button>
+                                <button id="stopwatch-mode-btn" class="font-normal text-tertiary-dark hover:text-secondary-dark pb-1 transition-all">Stopwatch</button>
+                            </div>
+
+                            <!-- Pomodoro UI -->
+                            <div id="pomodoro-ui" class="h-full flex flex-col justify-between pt-2">
+                                <div class="flex justify-center mb-2 relative">
+                                    <div class="relative w-64 h-64">
+                                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                            <circle class="text-tertiary-light opacity-30" stroke-width="4" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                            <circle id="timer-progress-ring" class="text-primary-dark transition-all duration-1000 ease-linear" stroke-width="4" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" stroke-linecap="round" />
+                                        </svg>    
+                                        
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-8">
+                                            <h4 id="timer-task-title" class="text-sm font-medium text-tertiary-dark mb-1 h-5 overflow-hidden w-full truncate">Select a task</h4>
+                                            <span id="timer-display" class="text-5xl font-bold text-secondary-dark tabular-nums tracking-tight">25:00</span>
+                                            <p id="timer-status" class="text-xs font-semibold uppercase tracking-wider text-tertiary-dark mt-2">Focus</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-center mb-4">
+                                    <button id="timer-control-btn" class="bg-primary-dark text-white w-32 py-3 rounded-full font-bold hover:bg-opacity-90 transition-all transform active:scale-95 shadow-md flex items-center justify-center gap-2">
+                                        <i data-lucide="play" class="w-5 h-5 fill-current"></i> START
+                                    </button>
+                                </div>    
+                                
+                                <div class="w-full flex items-center justify-between px-2">
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-tertiary-dark uppercase font-bold">Session</span>
+                                        <p id="pomodoro-count-display" class="text-xl font-bold text-primary-dark">0/4</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button id="timer-reset-btn" class="p-2 rounded-full hover:bg-tertiary-light text-tertiary-dark transition-colors" title="Reset Timer">
+                                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                                        </button>
+                                        <button id="skip-pomodoro-btn" class="p-2 rounded-full hover:bg-tertiary-light text-tertiary-dark transition-colors" title="Skip Session">
+                                            <i data-lucide="skip-forward" class="w-5 h-5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stopwatch UI -->
+                            <div id="stopwatch-ui" class="hidden h-full flex flex-col justify-between pt-2">
+                                <div class="flex justify-center mb-2 relative">
+                                    <div class="relative w-64 h-64">
+                                        <svg class="w-full h-full" viewBox="0 0 100 100">
+                                            <g id="stopwatch-tick-container" transform="rotate(-90 50 50)">
+                                                <!-- Ticks generated via JS -->
+                                            </g>
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span id="stopwatch-display" class="text-5xl font-bold text-secondary-dark tabular-nums">00:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-center mb-8">
+                                    <button id="stopwatch-control-btn" class="border-2 border-primary-dark text-primary-dark w-32 py-3 rounded-full font-bold hover:bg-primary-dark hover:text-white transition-all transform active:scale-95 text-lg">
+                                        START
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Review View -->
+            <div id="weekly-review-view" class="hidden flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+                <div class="bg-neutral-light rounded-xl p-6 h-full flex flex-col shadow-sm">
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+                        <div class="flex items-center gap-4">
+                            <h2 class="text-2xl font-bold text-secondary-dark">Productivity Review</h2>
+                            <div class="flex bg-white rounded-lg border border-tertiary-light p-1">
+                                <button class="px-3 py-1 rounded-md text-sm font-medium transition-colors bg-primary-dark text-white" data-view="day">Day</button>
+                                <button class="px-3 py-1 rounded-md text-sm font-medium transition-colors text-tertiary-dark hover:bg-secondary-light" data-view="week">Week</button>
+                                <button class="px-3 py-1 rounded-md text-sm font-medium transition-colors text-tertiary-dark hover:bg-secondary-light" data-view="month">Month</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-full border border-tertiary-light">
+                            <button id="prev-month-btn" class="hover:bg-secondary-light p-1 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5 text-secondary-dark"></i></button>
+                            <h3 id="calendar-month-year" class="text-lg font-semibold text-secondary-dark min-w-[140px] text-center">October 2023</h3>
+                            <button id="next-month-btn" class="hover:bg-secondary-light p-1 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5 text-secondary-dark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-7 gap-4 mb-2 text-center border-b border-tertiary-light pb-2">
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Sun</div>
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Mon</div>
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Tue</div>
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Wed</div>
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Thu</div>
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Fri</div>
+                        <div class="font-bold text-tertiary-dark text-sm uppercase">Sat</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 flex-grow auto-rows-fr">
+                        <!-- Days injected here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="w-full lg:w-80 xl:w-96 bg-secondary-light p-6 overflow-y-auto flex-shrink-0 border-l border-background shadow-xl z-20">
+            
+            <!-- Dashboard Sidebar Content -->
+            <div id="sidebar-dashboard-content">
+                <!-- Performance Card -->
+                <div class="bg-neutral-light rounded-xl p-6 mb-6 shadow-sm">
+                    <h3 class="font-bold text-lg text-secondary-dark mb-4">Daily Performance</h3>
+                    <div class="flex justify-center mb-6">
+                        <div class="relative w-40 h-40">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                <circle class="text-tertiary-light opacity-30" stroke-width="8" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                                <circle id="performance-ring" class="text-primary-dark transition-all duration-1000" stroke-width="8" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283" />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="performance-score" class="text-4xl font-bold text-primary-dark">0%</span>
+                                <span class="text-xs text-tertiary-dark">Completion</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-secondary-light p-3 rounded-lg">
+                            <p class="text-xs text-tertiary-dark uppercase font-bold mb-1">Focus Time</p>
+                            <p id="total-focus-time" class="text-xl font-bold text-primary-dark">0h 0m</p>
+                        </div>
+                        <div class="bg-secondary-light p-3 rounded-lg">
+                            <p class="text-xs text-tertiary-dark uppercase font-bold mb-1">Tasks Done</p>
+                            <p id="total-tasks-done" class="text-xl font-bold text-primary-dark">0/0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Progress Heatmap -->
+                <div class="bg-neutral-light rounded-xl p-6 mb-6 shadow-sm">
+                    <h3 class="font-bold text-lg text-secondary-dark mb-4">Monthly Heatmap</h3>
+                    <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-tertiary-dark mb-2">
+                        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                    </div>
+                    <div id="weekly-progress-grid" class="grid grid-cols-7 gap-1">
+                        <!-- Calendar squares will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Task Filter Legend -->
+                <div class="bg-neutral-light rounded-xl p-6 mb-6 shadow-sm">
+                    <h3 class="font-bold text-lg text-secondary-dark mb-2">Visualization Filter</h3>
+                    <p class="text-xs text-tertiary-dark mb-4">Click tasks to isolate their progress on the heatmap.</p>
+                    <div id="task-filters-container" class="space-y-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- Filters injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Writing Sidebar Content -->
+            <div id="sidebar-review-content" class="hidden flex flex-col h-full">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-lg text-secondary-dark">Journal Entry</h3>
+                    <button id="close-review-sidebar" class="md:hidden"><i data-lucide="x"></i></button>
+                </div>
+                <p id="sidebar-review-date-label" class="text-sm font-medium text-primary-dark mb-2 bg-secondary-light p-2 rounded text-center">Select a date</p>
+                
+                <textarea id="sidebar-review-text" class="flex-grow w-full p-4 border border-tertiary-light rounded-xl bg-white focus:ring-2 focus:ring-tertiary-dark resize-none mb-4 shadow-inner text-sm leading-relaxed" placeholder="Reflect on your day:&#10;- What did you accomplish?&#10;- What challenges did you face?&#10;- What can you improve tomorrow?"></textarea>
+                
+                <div class="flex justify-between gap-3">
+                     <button id="sidebar-delete-review-btn" class="px-4 py-2 text-error bg-red-50 hover:bg-red-100 rounded-lg transition-colors hidden font-medium text-sm">Delete</button>
+                    <button id="sidebar-save-review-btn" class="flex-1 bg-primary-dark text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-colors shadow-md">Save Journal</button>
+                </div>
+            </div>
+
+        </aside>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden modal-backdrop transition-opacity duration-300 opacity-0">
+        <div class="bg-neutral-light rounded-xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto modal-content transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-title" class="text-2xl font-bold text-secondary-dark">Add New Task</h2>
+                <button id="close-modal-btn" class="p-2 rounded-full hover:bg-secondary-light text-tertiary-dark transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="task-form" class="space-y-5">
+                <input type="hidden" id="task-id">
+                <div>
+                    <label for="task-title" class="block text-sm font-semibold text-tertiary-dark mb-1">Title</label>
+                    <input type="text" id="task-title-input" class="w-full p-3 border border-tertiary-light rounded-lg bg-white focus:ring-2 focus:ring-primary-dark focus:border-transparent outline-none transition-shadow" placeholder="What needs to be done?" required>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="task-category" class="block text-sm font-semibold text-tertiary-dark mb-1">Category</label>
+                        <select id="task-category" class="w-full p-3 border border-tertiary-light rounded-lg bg-white focus:ring-2 focus:ring-primary-dark outline-none cursor-pointer">
+                            <option value="signal">⚡ Signal (High)</option>
+                            <option value="noise">🍃 Noise (Low)</option>
+                        </select>
+                    </div>
+                    <div>
+                         <label for="task-shape" class="block text-sm font-semibold text-tertiary-dark mb-1">Visual Tag</label>
+                        <select id="task-shape" class="w-full p-3 border border-tertiary-light rounded-lg bg-white focus:ring-2 focus:ring-primary-dark outline-none cursor-pointer">
+                            <option value="circle">● Circle</option>
+                            <option value="triangle">▲ Triangle</option>
+                            <option value="square">■ Square</option>
+                            <option value="diamond">◆ Diamond</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                     <div>
+                        <label for="task-pomodoros" class="block text-sm font-semibold text-tertiary-dark mb-1">Est. Pomodoros</label>
+                        <input type="number" id="task-pomodoros" min="1" max="20" value="1" class="w-full p-3 border border-tertiary-light rounded-lg bg-white focus:ring-2 focus:ring-primary-dark outline-none">
+                    </div>
+                    <div>
+                        <label for="task-recurrence" class="block text-sm font-semibold text-tertiary-dark mb-1">Recurrence</label>
+                        <select id="task-recurrence" class="w-full p-3 border border-tertiary-light rounded-lg bg-white focus:ring-2 focus:ring-primary-dark outline-none cursor-pointer">
+                            <option value="none">One-off</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" id="cancel-task-btn" class="px-5 py-2 rounded-lg text-tertiary-dark font-medium hover:bg-secondary-light transition-colors">Cancel</button>
+                    <button type="submit" class="bg-primary-dark text-white px-8 py-2 rounded-lg font-bold hover:bg-opacity-90 transition-all transform active:scale-95 shadow-md">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden modal-backdrop transition-opacity duration-300 opacity-0">
+        <div class="bg-neutral-light rounded-xl shadow-2xl p-0 w-full max-w-2xl max-h-[85vh] overflow-hidden modal-content transform scale-95 flex flex-col">
+            
+            <div class="flex items-center justify-between p-6 border-b border-secondary-light bg-neutral-light">
+                <h2 class="text-xl font-bold text-secondary-dark flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> Settings</h2>
+                <button id="close-settings-modal-btn" class="p-2 rounded-full hover:bg-secondary-light text-tertiary-dark"><i data-lucide="x"></i></button>
+            </div>
+
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Sidebar -->
+                <div class="w-48 bg-secondary-light border-r border-tertiary-light p-4 flex flex-col gap-2">
+                    <button class="settings-nav-btn active w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-target="pomodoro-settings-panel">Timer</button>
+                    <button class="settings-nav-btn w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-target="general-settings-panel">General & Sound</button>
+                    <button class="settings-nav-btn w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-target="theme-settings-panel">Appearance</button>
+                    <button class="settings-nav-btn w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors" data-target="data-settings-panel">Data & Sync</button>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 p-8 overflow-y-auto bg-neutral-light">
+                    <!-- Timer Settings -->
+                    <div id="pomodoro-settings-panel" class="settings-panel space-y-6">
+                        <h3 class="text-lg font-bold text-secondary-dark">Timer Configuration</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-tertiary-dark uppercase mb-1">Pomodoro</label>
+                                <input type="number" id="setting-pomodoro" class="w-full p-2 border rounded-md" value="25">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-tertiary-dark uppercase mb-1">Short Break</label>
+                                <input type="number" id="setting-short-break" class="w-full p-2 border rounded-md" value="5">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-tertiary-dark uppercase mb-1">Long Break</label>
+                                <input type="number" id="setting-long-break" class="w-full p-2 border rounded-md" value="15">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-secondary-dark">Rounds before Long Break</label>
+                            <input type="number" id="setting-pomodoro-rounds" class="w-20 p-2 border rounded-md" value="4">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-secondary-dark">Auto-start Breaks</label>
+                            <input type="checkbox" id="setting-auto-start-breaks" class="w-5 h-5 text-primary-dark rounded">
+                        </div>
+                    </div>
+
+                    <!-- General Settings -->
+                    <div id="general-settings-panel" class="settings-panel hidden space-y-6">
+                        <h3 class="text-lg font-bold text-secondary-dark">General & Sound</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-tertiary-dark mb-2">Volume</label>
+                            <input type="range" id="setting-volume" min="0" max="1" step="0.1" class="w-full accent-primary-dark">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-secondary-dark">Weekly Review Start Day</label>
+                            <select id="setting-review-day" class="p-2 border rounded-md">
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Theme Settings -->
+                    <div id="theme-settings-panel" class="settings-panel hidden space-y-6">
+                        <h3 class="text-lg font-bold text-secondary-dark">Theme Selection</h3>
+                        <div class="grid grid-cols-2 gap-3" id="theme-grid">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Data Settings -->
+                    <div id="data-settings-panel" class="settings-panel hidden space-y-6">
+                        <h3 class="text-lg font-bold text-secondary-dark">Data Management</h3>
+                        <div class="p-4 bg-secondary-light rounded-lg">
+                            <p class="text-sm text-tertiary-dark mb-4">Export your data to JSON for backup or transfer.</p>
+                            <div class="flex gap-3">
+                                <button id="export-data-btn" class="flex-1 bg-tertiary-dark text-white py-2 rounded-lg text-sm font-bold hover:bg-opacity-90">Export Data</button>
+                                <label for="import-data-file" class="flex-1 bg-primary-dark text-white py-2 rounded-lg text-sm font-bold hover:bg-opacity-90 text-center cursor-pointer">
+                                    Import Data
+                                    <input type="file" id="import-data-file" accept=".json" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-secondary-light">
+                            <button id="danger-clear-data" class="text-error text-sm font-medium hover:underline">Clear all data (Factory Reset)</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="p-4 border-t border-secondary-light bg-neutral-light flex justify-end">
+                <button id="save-settings-btn" class="bg-primary-dark text-white px-6 py-2 rounded-lg font-bold hover:bg-opacity-90 transition-all shadow-md">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Modal -->
+    <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-neutral-light rounded-xl p-8 w-full max-w-md modal-content shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-secondary-dark flex items-center gap-2"><i data-lucide="sparkles" class="fill-primary-dark text-primary-dark"></i>AI Coach</h2>
+                <button id="close-ai-modal-btn" class="p-1 rounded-full hover:bg-secondary-light"><i data-lucide="x"></i></button>
+            </div>
+            <div id="ai-response" class="bg-secondary-light p-6 rounded-xl min-h-[120px] mb-6 text-secondary-dark text-lg font-medium leading-relaxed flex items-center justify-center text-center">
+                <p>Ready for a productivity boost? Ask me for a tip!</p>
+            </div>
+            <button id="get-ai-advice-btn" class="w-full bg-primary-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-opacity-90 transition-colors shadow-lg">Get New Advice</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-8 right-8 bg-secondary-dark text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i data-lucide="check-circle" class="text-primary-dark"></i>
+        <p id="toast-message" class="font-medium">Notification</p>
+    </div>
+
+    <!-- Sounds -->
+    <audio id="tick-sound" src="https://www.soundjay.com/clock/sounds/clock-ticking-1.mp3" loop></audio>
+    <audio id="alarm-sound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+
+    // --- CONSTANTS ---
+    const MAX_TITLE_LENGTH = 18;
+    const THEMES = [
+        { id: 'cloud-light', name: 'Cloud Light' },
+        { id: 'charcoal', name: 'Charcoal Dark' },
+        { id: 'radium', name: 'Radium Green' },
+        { id: 'lilac', name: 'Lilac Purple' },
+        { id: 'bubblegum', name: 'Bubblegum Pop' }
+    ];
+
+    // --- STATE MANAGEMENT ---
+    const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+
+    const getTodayString = () => new Date().toISOString().split('T')[0];
+
+    let state = {
+        tasks: [], 
+        dailyLogs: {}, 
+        timer: {
+            displayMode: 'pomodoro', 
+            mode: 'pomodoro',
+            timeLeft: 25 * 60,
+            isActive: false,
+            intervalId: null,
+            currentTaskId: null,
+        },
+        stopwatch: {
+            startTime: 0,
+            elapsedTime: 0,
+            isActive: false,
+            intervalId: null,
+            unloggedMs: 0
+        },
+        settings: {
+            pomodoroTime: 25,
+            shortBreakTime: 5,
+            longBreakTime: 15,
+            pomodoroRounds: 4,
+            autoStartBreaks: false,
+            theme: 'cloud-light',
+            reviewDayOfWeek: 0, 
+            volume: 0.5,
+        },
+        stats: {
+            pomodorosCompleted: 0,
+        },
+        ui: {
+            calendarFilter: [],
+            activeView: 'dashboard' 
+        }
+    };
+
+    // --- DOM REFERENCES ---
+    const els = {
+        app: document.getElementById('app'),
+        tasks: {
+            signal: document.getElementById('signal-tasks'),
+            noise: document.getElementById('noise-tasks'),
+            addBtn: document.getElementById('add-task-btn'),
+            modal: document.getElementById('task-modal'),
+            form: document.getElementById('task-form'),
+            cancelBtn: document.getElementById('cancel-task-btn'),
+            closeModalBtn: document.getElementById('close-modal-btn')
+        },
+        timer: {
+            display: document.getElementById('timer-display'),
+            ring: document.getElementById('timer-progress-ring'),
+            controlBtn: document.getElementById('timer-control-btn'),
+            resetBtn: document.getElementById('timer-reset-btn'),
+            skipBtn: document.getElementById('skip-pomodoro-btn'),
+            taskTitle: document.getElementById('timer-task-title'),
+            status: document.getElementById('timer-status'),
+            count: document.getElementById('pomodoro-count-display'),
+            modePomodoro: document.getElementById('pomodoro-mode-btn'),
+            modeStopwatch: document.getElementById('stopwatch-mode-btn'),
+            uiPomodoro: document.getElementById('pomodoro-ui'),
+            uiStopwatch: document.getElementById('stopwatch-ui')
+        },
+        stopwatch: {
+            display: document.getElementById('stopwatch-display'),
+            controlBtn: document.getElementById('stopwatch-control-btn'),
+            ticks: document.getElementById('stopwatch-tick-container')
+        },
+        settings: {
+            btn: document.getElementById('settings-btn'),
+            modal: document.getElementById('settings-modal'),
+            closeBtn: document.getElementById('close-settings-modal-btn'),
+            saveBtn: document.getElementById('save-settings-btn'),
+            panels: document.querySelectorAll('.settings-panel'),
+            navBtns: document.querySelectorAll('.settings-nav-btn'),
+            inputs: {
+                pomodoro: document.getElementById('setting-pomodoro'),
+                shortBreak: document.getElementById('setting-short-break'),
+                longBreak: document.getElementById('setting-long-break'),
+                rounds: document.getElementById('setting-pomodoro-rounds'),
+                autoBreak: document.getElementById('setting-auto-start-breaks'),
+                volume: document.getElementById('setting-volume'),
+                exportBtn: document.getElementById('export-data-btn'),
+                importInput: document.getElementById('import-data-file'),
+                clearDataBtn: document.getElementById('danger-clear-data')
+            }
+        },
+        review: {
+            btn: document.getElementById('weekly-review-btn'),
+            view: document.getElementById('weekly-review-view'),
+            dashboardView: document.getElementById('dashboard-view'),
+            grid: document.getElementById('calendar-grid'),
+            monthLabel: document.getElementById('calendar-month-year'),
+            prevBtn: document.getElementById('prev-month-btn'),
+            nextBtn: document.getElementById('next-month-btn'),
+            viewBtns: document.querySelectorAll('button[data-view]'),
+            sidebarContent: document.getElementById('sidebar-review-content'),
+            dashboardSidebar: document.getElementById('sidebar-dashboard-content'),
+            text: document.getElementById('sidebar-review-text'),
+            saveBtn: document.getElementById('sidebar-save-review-btn'),
+            deleteBtn: document.getElementById('sidebar-delete-review-btn'),
+            dateLabel: document.getElementById('sidebar-review-date-label')
+        },
+        dashboard: {
+            btn: document.getElementById('dashboard-btn'),
+            performanceRing: document.getElementById('performance-ring'),
+            performanceScore: document.getElementById('performance-score'),
+            focusTime: document.getElementById('total-focus-time'),
+            tasksDone: document.getElementById('total-tasks-done'),
+            heatmap: document.getElementById('weekly-progress-grid'),
+            filters: document.getElementById('task-filters-container')
+        },
+        ai: {
+            btn: document.getElementById('ai-assistant-btn'),
+            modal: document.getElementById('ai-modal'),
+            closeBtn: document.getElementById('close-ai-modal-btn'),
+            getAdviceBtn: document.getElementById('get-ai-advice-btn'),
+            response: document.getElementById('ai-response')
+        },
+        audio: {
+            tick: document.getElementById('tick-sound'),
+            alarm: document.getElementById('alarm-sound')
+        },
+        toast: {
+            el: document.getElementById('toast'),
+            msg: document.getElementById('toast-message')
+        }
+    };
+
+    // --- CORE FUNCTIONS ---
+
+    const saveState = () => {
+        localStorage.setItem('pomTodoProState', JSON.stringify(state));
+    };
+
+    const loadState = () => {
+        const saved = localStorage.getItem('pomTodoProState');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            state = { ...state, ...parsed };
+            // Deep merge specific objects if needed, but simple spread is ok for now structure
+            // Validate Tasks
+            state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
+            // Reset volatile timer state
+            state.timer.isActive = false;
+            state.timer.intervalId = null;
+            state.stopwatch.isActive = false;
+            state.stopwatch.intervalId = null;
+        } else {
+            // Seeding Initial Data
+            state.tasks = [
+                { id: generateUUID(), title: 'Welcome to Pro!', category: 'signal', shape: 'diamond', pomodoros: 2, completedPomodoros: 0, recurrence: 'none', completed: false, createdAt: new Date().toISOString() },
+            ];
+            state.ui.calendarFilter = state.tasks.map(t => t.id);
+        }
+        applyTheme(state.settings.theme);
+        applyVolume();
+    };
+
+    const applyTheme = (theme) => {
+        document.body.className = `bg-background text-neutral-dark antialiased theme-${theme}`;
+        // Update selection in settings
+        const grid = document.getElementById('theme-grid');
+        if(grid) {
+            grid.innerHTML = THEMES.map(t => `
+                <div class="cursor-pointer border-2 rounded-lg p-3 flex items-center gap-2 hover:bg-secondary-light transition-colors ${state.settings.theme === t.id ? 'border-primary-dark bg-secondary-light' : 'border-transparent'}" onclick="window.selectTheme('${t.id}')">
+                    <div class="w-4 h-4 rounded-full bg-gradient-to-br from-[var(--color-primary-dark)] to-[var(--color-tertiary-light)]"></div>
+                    <span class="text-sm font-medium">${t.name}</span>
+                </div>
+            `).join('');
+        }
+    };
+    window.selectTheme = (id) => {
+        state.settings.theme = id;
+        applyTheme(id);
+    };
+
+    const applyVolume = () => {
+        els.audio.tick.volume = state.settings.volume;
+        els.audio.alarm.volume = state.settings.volume;
+        els.settings.inputs.volume.value = state.settings.volume;
+    };
+
+    const showToast = (msg, type='success') => {
+        els.toast.msg.textContent = msg;
+        els.toast.el.classList.remove('translate-y-24', 'opacity-0');
+        setTimeout(() => els.toast.el.classList.add('translate-y-24', 'opacity-0'), 3000);
+    };
+
+    // --- TIMER ENGINE ---
+
+    const formatTime = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+    const updateTimerDisplay = () => {
+        els.timer.display.textContent = formatTime(state.timer.timeLeft);
+        const total = state.timer.mode === 'pomodoro' ? state.settings.pomodoroTime * 60 : 
+                     (state.timer.mode === 'shortBreak' ? state.settings.shortBreakTime * 60 : state.settings.longBreakTime * 60);
+        
+        const r = els.timer.ring.r.baseVal.value;
+        const c = 2 * Math.PI * r;
+        els.timer.ring.style.strokeDasharray = `${c} ${c}`;
+        els.timer.ring.style.strokeDashoffset = c - ((total - state.timer.timeLeft) / total) * c;
+        
+        // Tab Title update
+        if (state.timer.isActive) {
+            document.title = `${formatTime(state.timer.timeLeft)} - Focus`;
+        } else {
+            document.title = 'POM-TODO Pro';
+        }
+    };
+
+    const logTime = (taskId, seconds) => {
+        if (!taskId || seconds <= 0) return;
+        const date = getTodayString();
+        if (!state.dailyLogs[date]) state.dailyLogs[date] = { review: "", taskMetrics: {}, totalFocusTime: 0 };
+        
+        const log = state.dailyLogs[date];
+        if (!log.taskMetrics[taskId]) log.taskMetrics[taskId] = { secondsSpent: 0, status: 'incomplete' };
+        
+        log.taskMetrics[taskId].secondsSpent += seconds;
+        log.totalFocusTime += seconds;
+        
+        const task = state.tasks.find(t => t.id === taskId);
+        if (task && task.completed) log.taskMetrics[taskId].status = 'completed';
+    };
+
+    const startTimer = () => {
+        if (state.timer.isActive) return;
+        state.timer.isActive = true;
+        els.timer.controlBtn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-current"></i> PAUSE`;
+        lucide.createIcons();
+        els.audio.tick.play().catch(e => {}); 
+
+        state.timer.intervalId = setInterval(() => {
+            state.timer.timeLeft--;
+            logTime(state.timer.currentTaskId, 1); // Log every second for accuracy
+            updateTimerDisplay();
+            
+            if (state.timer.timeLeft <= 0) {
+                handleTimerComplete();
+            }
+        }, 1000);
+    };
+
+    const pauseTimer = () => {
+        state.timer.isActive = false;
+        clearInterval(state.timer.intervalId);
+        els.timer.controlBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i> RESUME`;
+        lucide.createIcons();
+        els.audio.tick.pause();
+        updateTimerDisplay();
+        saveState();
+    };
+
+    const resetTimer = (mode) => {
+        pauseTimer();
+        state.timer.mode = mode || 'pomodoro';
+        const times = { pomodoro: state.settings.pomodoroTime, shortBreak: state.settings.shortBreakTime, longBreak: state.settings.longBreakTime };
+        state.timer.timeLeft = times[state.timer.mode] * 60;
+        
+        els.timer.controlBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i> START`;
+        
+        // Update Status Text
+        const titles = { pomodoro: 'Time to Focus', shortBreak: 'Short Break', longBreak: 'Long Break' };
+        els.timer.status.textContent = titles[state.timer.mode];
+        
+        updateTimerDisplay();
+        lucide.createIcons();
+    };
+
+    const handleTimerComplete = () => {
+        pauseTimer();
+        els.audio.alarm.play();
+        
+        if (state.timer.mode === 'pomodoro') {
+            state.stats.pomodorosCompleted++;
+            if (state.timer.currentTaskId) {
+                const task = state.tasks.find(t => t.id === state.timer.currentTaskId);
+                if (task) {
+                    task.completedPomodoros++;
+                    if (task.completedPomodoros >= task.pomodoros) task.completed = true;
+                }
+            }
+            // Auto switch
+            const next = state.stats.pomodorosCompleted % state.settings.pomodoroRounds === 0 ? 'longBreak' : 'shortBreak';
+            resetTimer(next);
+            if (state.settings.autoStartBreaks) startTimer();
+            else showToast(`Session Complete! Take a ${next === 'longBreak' ? 'long' : 'short'} break.`);
+        } else {
+            resetTimer('pomodoro');
+            showToast('Break over! Ready to focus?');
+        }
+        renderTasks();
+        renderDashboardStats();
+    };
+
+    // --- TASK MANAGER ---
+
+    const renderTasks = () => {
+        ['signal', 'noise'].forEach(cat => {
+            const container = els.tasks[cat];
+            container.innerHTML = '';
+            const filtered = state.tasks.filter(t => t.category === cat);
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center p-4 text-tertiary-light text-sm border-2 border-dashed border-tertiary-light rounded-lg">Drop tasks here</div>`;
+            }
+
+            filtered.forEach(task => {
+                const el = document.createElement('div');
+                el.className = `task-item bg-white p-4 rounded-xl shadow-sm border border-transparent hover:border-tertiary-light flex items-center justify-between group ${task.completed ? 'completed' : ''}`;
+                el.draggable = true;
+                el.dataset.id = task.id;
+
+                // Icons
+                const shapes = {
+                    circle: '<circle cx="50" cy="50" r="35" fill="currentColor"/>',
+                    triangle: '<polygon points="50,15 90,85 10,85" fill="currentColor"/>',
+                    square: '<rect x="15" y="15" width="70" height="70" fill="currentColor"/>',
+                    diamond: '<polygon points="50,10 90,50 50,90 10,50" fill="currentColor"/>'
+                };
+                
+                el.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                         <div class="cursor-grab text-tertiary-light hover:text-tertiary-dark"><i data-lucide="grip-vertical" class="w-4 h-4"></i></div>
+                         <button onclick="window.toggleTask('${task.id}')" class="w-6 h-6 rounded-full border-2 ${task.completed ? 'bg-primary-dark border-primary-dark' : 'border-tertiary-light hover:border-primary-dark'} flex items-center justify-center transition-colors">
+                            ${task.completed ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
+                         </button>
+                         <div class="flex flex-col overflow-hidden">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-3 h-3 text-tertiary-dark flex-shrink-0" viewBox="0 0 100 100">${shapes[task.shape]}</svg>
+                                <span class="task-title font-medium text-secondary-dark truncate">${task.title}</span>
+                            </div>
+                            <div class="flex items-center gap-1 mt-1">
+                                <div class="flex space-x-0.5">
+                                    ${Array(Math.min(5, task.pomodoros)).fill(0).map((_,i) => 
+                                        `<div class="w-1.5 h-1.5 rounded-full ${i < task.completedPomodoros ? 'bg-primary-dark' : 'bg-tertiary-light'}"></div>`
+                                    ).join('')}
+                                    ${task.pomodoros > 5 ? `<span class="text-[10px] text-tertiary-dark leading-none ml-1">+${task.pomodoros-5}</span>` : ''}
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="window.selectTaskForTimer('${task.id}')" class="p-2 hover:bg-secondary-light rounded-lg text-primary-dark" title="Focus"><i data-lucide="play-circle" class="w-5 h-5"></i></button>
+                        <button onclick="window.editTask('${task.id}')" class="p-2 hover:bg-secondary-light rounded-lg text-tertiary-dark"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                        <button onclick="window.deleteTask('${task.id}')" class="p-2 hover:bg-error/10 rounded-lg text-error"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+                
+                // Drag Events
+                el.addEventListener('dragstart', () => {
+                    el.classList.add('dragging');
+                    window.draggedTaskId = task.id;
+                });
+                el.addEventListener('dragend', () => {
+                    el.classList.remove('dragging');
+                    window.draggedTaskId = null;
+                });
+
+                container.appendChild(el);
+            });
+        });
+        
+        // Add Drag Listeners to Containers
+        document.querySelectorAll('.drag-container').forEach(container => {
+            container.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (dragging) {
+                    if (afterElement == null) {
+                        container.appendChild(dragging);
+                    } else {
+                        container.insertBefore(dragging, afterElement);
+                    }
+                }
+            });
+            container.addEventListener('drop', e => {
+                const cat = container.dataset.category;
+                const taskId = window.draggedTaskId;
+                const task = state.tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.category = cat; // Update category
+                    // Reorder array based on DOM order
+                    // (Simple implementation: just move to end of new list in state or strictly follow DOM)
+                    // Ideally we map the DOM order back to state.tasks
+                    updateTaskOrder();
+                    saveState();
+                    renderDashboardStats(); // Update stats if categorization changes metrics
+                }
+            });
+        });
+        
+        lucide.createIcons();
+    };
+
+    const getDragAfterElement = (container, y) => {
+        const draggableElements = [...container.querySelectorAll('.task-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+
+    const updateTaskOrder = () => {
+        // Create new tasks array based on DOM
+        const newOrder = [];
+        ['signal', 'noise'].forEach(cat => {
+            const container = els.tasks[cat];
+            container.querySelectorAll('.task-item').forEach(el => {
+                const t = state.tasks.find(x => x.id === el.dataset.id);
+                if(t) {
+                    t.category = cat;
+                    newOrder.push(t);
+                }
+            });
+        });
+        // Append any tasks that might not be in DOM (filters?)
+        // In this simple view all are shown.
+        state.tasks = newOrder;
+    };
+
+    // --- GLOBAL ACTIONS ---
+    window.toggleTask = (id) => {
+        const t = state.tasks.find(x => x.id === id);
+        if(t) {
+            t.completed = !t.completed;
+            logTime(id, 0); // Log status change
+            saveState();
+            renderTasks();
+            renderDashboardStats();
+        }
+    };
+    window.deleteTask = (id) => {
+        if(confirm('Delete this task?')) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            if(state.timer.currentTaskId === id) resetTimer();
+            saveState();
+            renderTasks();
+            renderDashboardStats();
+        }
+    };
+    window.selectTaskForTimer = (id) => {
+        const t = state.tasks.find(x => x.id === id);
+        if(t) {
+            state.timer.currentTaskId = id;
+            els.timer.taskTitle.textContent = t.title;
+            // Highlight active
+            resetTimer('pomodoro');
+            startTimer();
+        }
+    };
+    window.editTask = (id) => {
+        const t = state.tasks.find(x => x.id === id);
+        if(t) {
+            document.getElementById('task-id').value = t.id;
+            document.getElementById('task-title-input').value = t.title;
+            document.getElementById('task-category').value = t.category;
+            document.getElementById('task-shape').value = t.shape;
+            document.getElementById('task-pomodoros').value = t.pomodoros;
+            document.getElementById('task-recurrence').value = t.recurrence;
+            
+            els.tasks.modal.classList.remove('hidden');
+            setTimeout(() => {
+                els.tasks.modal.classList.remove('opacity-0');
+                els.tasks.modal.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+    };
+
+    // --- FORM HANDLING ---
+    els.tasks.addBtn.addEventListener('click', () => {
+        els.tasks.form.reset();
+        document.getElementById('task-id').value = '';
+        els.tasks.modal.classList.remove('hidden');
+        setTimeout(() => {
+            els.tasks.modal.classList.remove('opacity-0');
+            els.tasks.modal.querySelector('.modal-content').classList.remove('scale-95');
+        }, 10);
+    });
+    
+    const closeModal = () => {
+        els.tasks.modal.classList.add('opacity-0');
+        els.tasks.modal.querySelector('.modal-content').classList.add('scale-95');
+        setTimeout(() => els.tasks.modal.classList.add('hidden'), 300);
+    };
+    els.tasks.closeModalBtn.addEventListener('click', closeModal);
+    els.tasks.cancelBtn.addEventListener('click', closeModal);
+
+    els.tasks.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('task-id').value;
+        const data = {
+            title: document.getElementById('task-title-input').value,
+            category: document.getElementById('task-category').value,
+            shape: document.getElementById('task-shape').value,
+            pomodoros: parseInt(document.getElementById('task-pomodoros').value),
+            recurrence: document.getElementById('task-recurrence').value
+        };
+
+        if(id) {
+            const idx = state.tasks.findIndex(t => t.id === id);
+            if(idx > -1) state.tasks[idx] = { ...state.tasks[idx], ...data };
+        } else {
+            const newTask = {
+                id: generateUUID(),
+                completedPomodoros: 0,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                ...data
+            };
+            state.tasks.push(newTask);
+            state.ui.calendarFilter.push(newTask.id); // Auto-add to filter
+        }
+        saveState();
+        renderTasks();
+        renderDashboardStats(); // To update filter list
+        closeModal();
+    });
+
+    // --- DASHBOARD STATS & CHARTS ---
+    const renderDashboardStats = () => {
+        const date = getTodayString();
+        const log = state.dailyLogs[date] || { totalFocusTime: 0, taskMetrics: {} };
+        
+        // 1. Daily Ring (Goal based? Let's say goal is 4 hours or 8 pomodoros)
+        const goalSeconds = 4 * 3600; 
+        const percent = Math.min(100, Math.round((log.totalFocusTime / goalSeconds) * 100));
+        
+        const r = 45; 
+        const c = 2 * Math.PI * r;
+        els.dashboard.performanceRing.style.strokeDasharray = `${c} ${c}`;
+        els.dashboard.performanceRing.style.strokeDashoffset = c - (percent/100)*c;
+        els.dashboard.performanceScore.textContent = `${percent}%`;
+
+        // 2. Text Stats
+        const hours = Math.floor(log.totalFocusTime / 3600);
+        const mins = Math.floor((log.totalFocusTime % 3600) / 60);
+        els.dashboard.focusTime.textContent = `${hours}h ${mins}m`;
+
+        const completedToday = Object.keys(log.taskMetrics).filter(tid => log.taskMetrics[tid].status === 'completed').length;
+        const workedOnToday = Object.keys(log.taskMetrics).length;
+        els.dashboard.tasksDone.textContent = `${completedToday}/${workedOnToday}`;
+
+        // 3. Filter List
+        els.dashboard.filters.innerHTML = '';
+        state.tasks.forEach(task => {
+            const isSel = state.ui.calendarFilter.includes(task.id);
+            const d = document.createElement('div');
+            d.className = `flex items-center justify-between p-2 rounded cursor-pointer transition-colors ${isSel ? 'bg-white shadow-sm' : 'hover:bg-secondary-light'}`;
+            d.onclick = () => {
+                if(isSel) state.ui.calendarFilter = state.ui.calendarFilter.filter(x => x !== task.id);
+                else state.ui.calendarFilter.push(task.id);
+                saveState();
+                renderDashboardStats();
+            };
+            
+            // Reusing shapes map logic
+            const shapes = {
+                circle: '<circle cx="50" cy="50" r="35" fill="currentColor"/>',
+                triangle: '<polygon points="50,15 90,85 10,85" fill="currentColor"/>',
+                square: '<rect x="15" y="15" width="70" height="70" fill="currentColor"/>',
+                diamond: '<polygon points="50,10 90,50 50,90 10,50" fill="currentColor"/>'
+            };
+
+            d.innerHTML = `
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <svg class="w-3 h-3 ${isSel ? 'text-primary-dark' : 'text-tertiary-light'}" viewBox="0 0 100 100">${shapes[task.shape]}</svg>
+                    <span class="text-xs truncate ${isSel ? 'text-secondary-dark font-medium' : 'text-tertiary-dark'}">${task.title}</span>
+                </div>
+                ${isSel ? '<i data-lucide="check" class="w-3 h-3 text-primary-dark"></i>' : ''}
+            `;
+            els.dashboard.filters.appendChild(d);
+        });
+        
+        // 4. Heatmap (reuse logic from old file but simplified/cleaner)
+        renderHeatmap();
+        lucide.createIcons();
+    };
+
+    const renderHeatmap = () => {
+        els.dashboard.heatmap.innerHTML = '';
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+        const startDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+
+        for(let i=0; i<startDay; i++) els.dashboard.heatmap.appendChild(document.createElement('div'));
+
+        for(let d=1; d<=daysInMonth; d++) {
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const log = state.dailyLogs[dateStr];
+            
+            const cell = document.createElement('div');
+            cell.className = "aspect-square rounded-sm relative group";
+            
+            if(state.ui.calendarFilter.length > 0 && log) {
+                // Filter Mode
+                cell.className += " bg-white border border-tertiary-light flex flex-wrap content-start p-[1px] gap-[1px]";
+                state.ui.calendarFilter.forEach(tid => {
+                    if(log.taskMetrics[tid] && log.taskMetrics[tid].secondsSpent > 60) {
+                        const s = document.createElement('div');
+                        s.className = "w-1 h-1 rounded-full bg-primary-dark";
+                        cell.appendChild(s);
+                    }
+                });
+            } else {
+                // Density Mode
+                const time = log ? log.totalFocusTime : 0;
+                if(time === 0) cell.className += " bg-secondary-light opacity-30";
+                else {
+                    cell.className += " bg-primary-dark";
+                    if(time < 3600) cell.style.opacity = 0.3;
+                    else if(time < 7200) cell.style.opacity = 0.6;
+                    else cell.style.opacity = 1;
+                }
+            }
+            // Tooltip
+            const tt = document.createElement('div');
+            tt.className = "absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-secondary-dark text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 pointer-events-none";
+            tt.textContent = `${dateStr}: ${(log?.totalFocusTime/3600 || 0).toFixed(1)}h`;
+            cell.appendChild(tt);
+            
+            els.dashboard.heatmap.appendChild(cell);
+        }
+    };
+
+    // --- NAVIGATION & VIEWS ---
+    const switchView = (viewName) => {
+        state.ui.activeView = viewName;
+        if(viewName === 'dashboard') {
+            els.review.view.classList.add('hidden');
+            els.review.sidebarContent.classList.add('hidden');
+            
+            els.review.dashboardView.classList.remove('hidden');
+            els.review.dashboardSidebar.classList.remove('hidden');
+            
+            els.dashboard.btn.classList.add('bg-tertiary-dark');
+            els.review.btn.classList.remove('bg-tertiary-dark');
+            renderDashboardStats();
+        } else {
+            els.review.dashboardView.classList.add('hidden');
+            els.review.dashboardSidebar.classList.add('hidden');
+            
+            els.review.view.classList.remove('hidden');
+            els.review.sidebarContent.classList.remove('hidden');
+            
+            els.review.btn.classList.add('bg-tertiary-dark');
+            els.dashboard.btn.classList.remove('bg-tertiary-dark');
+            renderReviewCalendar();
+        }
+    };
+    els.dashboard.btn.addEventListener('click', () => switchView('dashboard'));
+    els.review.btn.addEventListener('click', () => switchView('review'));
+
+    // --- CALENDAR LOGIC (Review) ---
+    // (Simplified for brevity but functional)
+    let reviewDate = new Date();
+    const renderReviewCalendar = () => {
+        const y = reviewDate.getFullYear();
+        const m = reviewDate.getMonth();
+        els.review.monthLabel.textContent = reviewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric'});
+        
+        els.review.grid.innerHTML = '';
+        const startDay = new Date(y, m, 1).getDay();
+        const days = new Date(y, m+1, 0).getDate();
+        
+        for(let i=0; i<startDay; i++) els.review.grid.appendChild(document.createElement('div'));
+
+        for(let d=1; d<=days; d++) {
+            const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const log = state.dailyLogs[dateStr];
+            
+            const cell = document.createElement('div');
+            cell.className = `min-h-[80px] border border-tertiary-light rounded-lg p-2 cursor-pointer transition-all hover:shadow-md ${log?.review ? 'bg-primary-dark text-neutral-light' : 'bg-white hover:bg-secondary-light'}`;
+            cell.innerHTML = `<div class="font-bold mb-1">${d}</div>`;
+            
+            if(log?.review) cell.innerHTML += `<div class="mt-1"><i data-lucide="book-open" class="w-4 h-4 opacity-70"></i></div>`;
+            if(log?.totalFocusTime > 0) cell.innerHTML += `<div class="text-[10px] opacity-80 mt-auto">${(log.totalFocusTime/3600).toFixed(1)}h</div>`;
+            
+            cell.onclick = () => loadReview(dateStr);
+            els.review.grid.appendChild(cell);
+        }
+        lucide.createIcons();
+    };
+    
+    const loadReview = (dateStr) => {
+        window.selectedReviewDate = dateStr;
+        els.review.dateLabel.textContent = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric'});
+        els.review.text.value = state.dailyLogs[dateStr]?.review || '';
+        if(state.dailyLogs[dateStr]?.review) els.review.deleteBtn.classList.remove('hidden');
+        else els.review.deleteBtn.classList.add('hidden');
+    };
+
+    els.review.saveBtn.addEventListener('click', () => {
+        if(!window.selectedReviewDate) return;
+        if(!state.dailyLogs[window.selectedReviewDate]) state.dailyLogs[window.selectedReviewDate] = { taskMetrics: {}, totalFocusTime: 0 };
+        state.dailyLogs[window.selectedReviewDate].review = els.review.text.value;
+        saveState();
+        renderReviewCalendar();
+        showToast('Journal Saved');
+        els.review.deleteBtn.classList.remove('hidden');
+    });
+
+    els.review.prevBtn.addEventListener('click', () => { reviewDate.setMonth(reviewDate.getMonth()-1); renderReviewCalendar(); });
+    els.review.nextBtn.addEventListener('click', () => { reviewDate.setMonth(reviewDate.getMonth()+1); renderReviewCalendar(); });
+
+    // --- SETTINGS ---
+    els.settings.btn.addEventListener('click', () => {
+        // Load vals
+        const s = state.settings;
+        els.settings.inputs.pomodoro.value = s.pomodoroTime;
+        els.settings.inputs.shortBreak.value = s.shortBreakTime;
+        els.settings.inputs.longBreak.value = s.longBreakTime;
+        els.settings.inputs.rounds.value = s.pomodoroRounds;
+        els.settings.inputs.autoBreak.checked = s.autoStartBreaks;
+        els.settings.inputs.volume.value = s.volume;
+        
+        els.settings.modal.classList.remove('hidden');
+        setTimeout(() => {
+            els.settings.modal.classList.remove('opacity-0');
+            els.settings.modal.querySelector('.modal-content').classList.remove('scale-95');
+        }, 10);
+    });
+
+    els.settings.closeBtn.addEventListener('click', () => {
+        els.settings.modal.classList.add('opacity-0');
+        els.settings.modal.querySelector('.modal-content').classList.add('scale-95');
+        setTimeout(() => els.settings.modal.classList.add('hidden'), 300);
+    });
+
+    els.settings.navBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            els.settings.navBtns.forEach(b => b.classList.remove('active', 'bg-tertiary-light'));
+            btn.classList.add('active', 'bg-tertiary-light');
+            els.settings.panels.forEach(p => p.classList.add('hidden'));
+            document.getElementById(btn.dataset.target).classList.remove('hidden');
+        });
+    });
+
+    els.settings.saveBtn.addEventListener('click', () => {
+        state.settings.pomodoroTime = parseInt(els.settings.inputs.pomodoro.value);
+        state.settings.shortBreakTime = parseInt(els.settings.inputs.shortBreak.value);
+        state.settings.longBreakTime = parseInt(els.settings.inputs.longBreak.value);
+        state.settings.pomodoroRounds = parseInt(els.settings.inputs.rounds.value);
+        state.settings.autoStartBreaks = els.settings.inputs.autoBreak.checked;
+        state.settings.volume = parseFloat(els.settings.inputs.volume.value);
+        
+        saveState();
+        applyVolume();
+        els.settings.closeBtn.click();
+        
+        if(!state.timer.isActive) resetTimer(state.timer.mode);
+        showToast('Settings Updated');
+    });
+    
+    // --- IMPORT / EXPORT ---
+    els.settings.inputs.exportBtn.addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `pom-todo-backup-${getTodayString()}.json`);
+        document.body.appendChild(dlAnchorElem);
+        dlAnchorElem.click();
+        dlAnchorElem.remove();
+    });
+
+    els.settings.inputs.importInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if(confirm("This will replace your current data. Continue?")) {
+                    state = imported;
+                    saveState();
+                    location.reload();
+                }
+            } catch(err) { alert("Invalid JSON file"); }
+        };
+        reader.readAsText(file);
+    });
+
+    // --- INIT ---
+    const init = () => {
+        const d = new Date();
+        document.getElementById('current-date').textContent = d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
+        
+        loadState();
+        resetTimer();
+        renderTasks();
+        renderDashboardStats();
+        
+        // Timer Controls
+        els.timer.controlBtn.addEventListener('click', () => state.timer.isActive ? pauseTimer() : startTimer());
+        els.timer.resetBtn.addEventListener('click', () => resetTimer(state.timer.mode));
+        els.timer.skipBtn.addEventListener('click', () => {
+            handleTimerComplete(); // Skip acts like complete but maybe without logging full time? 
+            // For pro, let's just jump to next.
+        });
+
+        // Stopwatch logic (basic)
+        els.timer.modePomodoro.addEventListener('click', () => {
+             els.timer.uiPomodoro.classList.remove('hidden');
+             els.timer.uiStopwatch.classList.add('hidden');
+             els.timer.modePomodoro.classList.add('border-b-2', 'font-bold');
+             els.timer.modeStopwatch.classList.remove('border-b-2', 'font-bold');
+        });
+        els.timer.modeStopwatch.addEventListener('click', () => {
+             els.timer.uiPomodoro.classList.add('hidden');
+             els.timer.uiStopwatch.classList.remove('hidden');
+             els.timer.modeStopwatch.classList.add('border-b-2', 'font-bold');
+             els.timer.modePomodoro.classList.remove('border-b-2', 'font-bold');
+             // Init ticks
+             els.stopwatch.ticks.innerHTML = '';
+             for(let i=0; i<60; i++) {
+                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                 const angle = (i/60) * 2 * Math.PI;
+                 const x1 = 50 + Math.cos(angle)*40;
+                 const y1 = 50 + Math.sin(angle)*40;
+                 const x2 = 50 + Math.cos(angle)*45;
+                 const y2 = 50 + Math.sin(angle)*45;
+                 line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+                 line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+                 line.setAttribute("stroke", "currentColor");
+                 line.setAttribute("stroke-width", "1");
+                 line.classList.add("text-tertiary-light");
+                 els.stopwatch.ticks.appendChild(line);
+             }
+        });
+        
+        // Request Notification
+        if("Notification" in window && Notification.permission !== "granted") Notification.requestPermission();
+    };
+
+    init();
+});
+    </script>
+</body>
+</html>
